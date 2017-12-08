@@ -355,9 +355,9 @@ simulate.QTL.model.and.effects <- function(num.alleles=8,
     else if(model.method == "uniform"){
       M[which(rowSums(M)==0),] <- t(rmultinom(num.founders - num.alleles, 1, rep(1/num.alleles, num.alleles)))
     }
+    M <- matrix(0, num.founders, num.alleles)
+    M[cbind(sample(1:num.founders, num.alleles), 1:num.alleles)] <- 1
   }
-  M <- matrix(0, num.founders, num.alleles)
-  M[cbind(sample(1:num.founders, num.alleles), 1:num.alleles)] <- 1
   
   if(is.null(beta)){
     if(effect.type == "random"){
