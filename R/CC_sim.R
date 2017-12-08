@@ -571,5 +571,3 @@ incidence.matrix <- function(fact){
   return(m)
 }
   
-  
-
