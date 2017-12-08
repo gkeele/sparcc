@@ -1,156 +1,3 @@
-#' Simulate Collaborative Cross (CC) phenotype data from the realized CC lines founder haplotype probabilities stored in a genome cache directory
-#'
-#' This function takes various input parameters to simulate CC data to be used in power calculations or as input data for 
-#' other tools that analyze CC data.
-#'
-#' @param genomecache The path to the genome cache directory. The genome cache is a particularly structured
-#' directory that stores the haplotype probabilities/dosages at each locus. It has an additive model
-#' subdirectory and a full model subdirectory. Each contains subdirectories for each chromosome, which then
-#' store .RData files for the probabilities/dosages of each locus.
-#' @param CC.lines DEFAULT: NULL. If NULL is specified, sim.CC.data() will randomly draw samples of the 
-#' available CC lines of the size specified in num.lines.
-#' @param num.lines DEFAULT: NULL. If NULL, sim.CC.data() expects that CC.lines is non-NULL. If CC.lines
-#' is NULL, num.lines determines the number of CC lines that are sampled.
-#' @param vary.lines DEFAULT: TRUE. If CC.lines is NULL and vary.lines is TRUE, then sim.CC.data() will
-#' sample multiple sets of CC lines of the size specified in num.lines. If CC.lines is NULL and vary.lines is
-#' FALSE, then just one set of CC lines will be sampled.
-#' @param locus DEFAULT: NULL. If NULL is specified, sim.CC.data() will randomly draw a locus stored in
-#' the genome cache. 
-#' @param vary.locus DEFAULT: TRUE. If locus is NULL and vary.locus is TRUE, then sim.CC.data() will sample
-#' as many loci as specified in num.sim. If locus is NULL and vary.locus is FALSE, then sim.CC.data() will
-#' only sample one locus.
-#' @param num.replicates The number of replicates of each CC line that will be simulated. Mapping for power calculations
-#' will use strain means. Currently requires that all lines have the same number of replicates.
-#' @param num.sim The number of phenotypes to be simulated for a given parameter setting.
-#' @param M.ID DEFAULT: NULL. M is a matrix that maps from counts of founder haplotypes to counts of functional 
-#' alleles. Mapping will be based on haplotype association, but potentially there are two to the number of
-#' founders alleles at the QTL. M.ID is a string that codifies this mapping. One potential balanced two allele
-#' M.ID would be "c(0,0,0,0,1,1,1,1)". With 8 functional alleles, on per founder, the only M.ID is "c(0,1,2,3,4,5,6,7)".
-#' If M.ID is NULL, M.ID will be sampled.
-#' @param num.alleles DEFAULT: 8. The number of functional alleles. Must be less than or equal to the number of 
-#' founders.
-#' @param num.founders DEFAULT: 8. The number of founders, which must correspond to the genome cache. The CC has
-#' eight.
-#' @param qtl.effect.size The size of the simulated QTL effect. The scale of the input is in proportion of
-#' the phenotypic variance due to the QTL, thus should be greater than or equal to zero, and less than one.
-#' @param beta DEFAULT: NULL. Allows for the manual specification of QTL effect. Is expected to be a vector
-#' the length of the number of alleles. It will be scaled based on qtl.effect.size.
-#' @param strain.effect.size The size of the simulated strain effect, which represents something akin to a polygenic 
-#' effect. Other variants specific to CC lines will result in overall strain-specific effects. The scale of the input 
-#' is in proportion of the phenotypic variance due to the strain, thus should be greater than or equal to zero, and less than one.
-#' @param impute DEFAULT: TRUE. If TRUE, the QTL portion of the design matrix in the simulation is a realized sampling
-#' of haplotypes from the probabilities. If FALSE, the simulations are based on the probabilities, which is flawed in
-#' terms of biological reality.
-#' @param scale.by.effect DEFAULT: FALSE. If TRUE, the effects are scaled by var(QTL effect) so that the effect matches
-#' the stated proportion of variance in a balanced population.
-#' @param scale.by.varp DEFAULT: TRUE. If TRUE, the effects are scaled by var(X %*% QTL effect) so that the effect matches
-#' the stated proportion of variance in the observed population.
-#' @export
-#' @examples sim.CC.data()
-sim.CC.data <- function(genomecache, 
-                        CC.lines=NULL, 
-                        num.lines=NULL, 
-                        vary.lines=TRUE,
-                        locus=NULL, 
-                        vary.locus=TRUE,
-                        num.replicates, 
-                        num.sim,
-                        M.ID=NULL,
-                        num.alleles=8, 
-                        num.founders=8,
-                        qtl.effect.size,
-                        beta=NULL,
-                        strain.effect.size,
-                        impute=TRUE,
-                        scale.by.effect=FALSE,
-                        scale.by.varp=TRUE){
-  
-  h <- miqtl::DiploprobReader$new(genomecache)
-  
-  ## Sampling lines
-  if(is.null(CC.lines)){
-    CC.lines <- sapply(1:ifelse(vary.lines, num.sim, 1), function(i) sample(x=h$getSubjects(), size=num.lines, replace=FALSE))
-    if(vary.lines){
-      cc.index <- 1:num.sim
-    }
-    else{
-      cc.index <- rep(1, num.sim)
-    }
-  }
-  else{
-    vary.lines <- FALSE
-    num.lines <- length(CC.lines)
-    CC.lines <- matrix(CC.lines, ncol=1)
-    cc.index <- rep(1, num.sim)
-  }
-  
-  ## Setting number of alleles to match pre-specified QTL effect - convenience
-  if(!is.null(beta)){
-    num.alleles <- length(beta)
-  }
-
-  ## Sampling loci
-  if(is.null(locus)){
-    locus <- sample(h$getLoci(), size=ifelse(vary.locus, num.sim, 1), replace=TRUE)
-    if(vary.locus){
-      locus.index <- 1:num.sim
-    }
-    else{
-      locus.index <- rep(1, num.sim)
-    }
-  }
-  else{
-    vary.locus <- FALSE
-    locus.index <- rep(1, num.sim)
-  }
-
-  M <- NULL
-  if(!is.null(M.ID)){
-    M <- model.matrix.from.ID(M.ID)
-    num.alleles <- length(unique(unlist(strsplit(x=M.ID, split=","))))
-  }
-  sim.matrix <- matrix(NA, nrow=nrow(CC.lines), ncol=num.sim)
-  id.matrix <- matrix(NA, nrow=nrow(CC.lines), ncol=ifelse(vary.lines, num.sim, 1))
-  for(i in 1:num.sim){
-    this.sim <- simulate.CC.qtl(CC.lines=CC.lines[,cc.index[i]], 
-                                num.replicates=num.replicates,
-                                M=M,
-                                num.alleles=num.alleles, 
-                                num.founders=num.founders,
-                                qtl.effect.size=qtl.effect.size, 
-                                strain.effect.size=strain.effect.size,
-                                impute=impute, 
-                                scale.by.varp=scale.by.varp,
-                                locus.matrix=h$getLocusMatrix(locus=locus[locus.index[i]], model="full"), 
-                                num.sim=1)$data
-    sim.matrix[,i] <- this.sim[,1]
-    if(vary.lines | i == 1){
-      id.matrix[,i] <- as.character(this.sim[,2])
-    }
-  }
-  colnames(sim.matrix) <- paste0("sim.y.", 1:num.sim)
-  colnames(id.matrix) <- paste0("SUBJECT.NAME.", 1:ncol(id.matrix))
-
-  outcome <- data.frame(sim.matrix, id.matrix)
-  
-  return(list(data=outcome,
-              locus=locus,
-              locus.pos=list(Mb=h$getLocusStart(locus, scale="Mb"),
-                             cM=h$getLocusStart(locus, scale="cM")),
-              genomecache=genomecache,
-              properties=list(num.alleles=num.alleles,
-                              num.replicates=num.replicates,
-                              num.founders=num.founders,
-                              qtl.effect.size=qtl.effect.size, 
-                              strain.effect.size=strain.effect.size,
-                              num.lines=num.lines,
-                              impute=impute,
-                              scale.by.varp=scale.by.varp,
-                              M.ID=M.ID,
-                              vary.lines=vary.lines,
-                              vary.locus=vary.locus)))
-}
-
 #' Runs the genome scans of the simulated data output by sim.CC.data()
 #'
 #' This function takes the output from sim.CC.data() and performs the genome scans. Internally it runs
@@ -244,6 +91,159 @@ run.sim.scans <- function(sim.data,
     output$all.sim.qr <- all.sim.qr
   }
   return(output)
+}
+
+#' Simulate Collaborative Cross (CC) phenotype data from the realized CC lines founder haplotype probabilities stored in a genome cache directory
+#'
+#' This function takes various input parameters to simulate CC data to be used in power calculations or as input data for 
+#' other tools that analyze CC data.
+#'
+#' @param genomecache The path to the genome cache directory. The genome cache is a particularly structured
+#' directory that stores the haplotype probabilities/dosages at each locus. It has an additive model
+#' subdirectory and a full model subdirectory. Each contains subdirectories for each chromosome, which then
+#' store .RData files for the probabilities/dosages of each locus.
+#' @param CC.lines DEFAULT: NULL. If NULL is specified, sim.CC.data() will randomly draw samples of the 
+#' available CC lines of the size specified in num.lines.
+#' @param num.lines DEFAULT: NULL. If NULL, sim.CC.data() expects that CC.lines is non-NULL. If CC.lines
+#' is NULL, num.lines determines the number of CC lines that are sampled.
+#' @param vary.lines DEFAULT: TRUE. If CC.lines is NULL and vary.lines is TRUE, then sim.CC.data() will
+#' sample multiple sets of CC lines of the size specified in num.lines. If CC.lines is NULL and vary.lines is
+#' FALSE, then just one set of CC lines will be sampled.
+#' @param locus DEFAULT: NULL. If NULL is specified, sim.CC.data() will randomly draw a locus stored in
+#' the genome cache. 
+#' @param vary.locus DEFAULT: TRUE. If locus is NULL and vary.locus is TRUE, then sim.CC.data() will sample
+#' as many loci as specified in num.sim. If locus is NULL and vary.locus is FALSE, then sim.CC.data() will
+#' only sample one locus.
+#' @param num.replicates The number of replicates of each CC line that will be simulated. Mapping for power calculations
+#' will use strain means. Currently requires that all lines have the same number of replicates.
+#' @param num.sim The number of phenotypes to be simulated for a given parameter setting.
+#' @param M.ID DEFAULT: NULL. M is a matrix that maps from counts of founder haplotypes to counts of functional 
+#' alleles. Mapping will be based on haplotype association, but potentially there are two to the number of
+#' founders alleles at the QTL. M.ID is a string that codifies this mapping. One potential balanced two allele
+#' M.ID would be "c(0,0,0,0,1,1,1,1)". With 8 functional alleles, on per founder, the only M.ID is "c(0,1,2,3,4,5,6,7)".
+#' If M.ID is NULL, M.ID will be sampled.
+#' @param num.alleles DEFAULT: 8. The number of functional alleles. Must be less than or equal to the number of 
+#' founders.
+#' @param num.founders DEFAULT: 8. The number of founders, which must correspond to the genome cache. The CC has
+#' eight.
+#' @param qtl.effect.size The size of the simulated QTL effect. The scale of the input is in proportion of
+#' the phenotypic variance due to the QTL, thus should be greater than or equal to zero, and less than one.
+#' @param beta DEFAULT: NULL. Allows for the manual specification of QTL effect. Is expected to be a vector
+#' the length of the number of alleles. It will be scaled based on qtl.effect.size.
+#' @param strain.effect.size The size of the simulated strain effect, which represents something akin to a polygenic 
+#' effect. Other variants specific to CC lines will result in overall strain-specific effects. The scale of the input 
+#' is in proportion of the phenotypic variance due to the strain, thus should be greater than or equal to zero, and less than one.
+#' @param impute DEFAULT: TRUE. If TRUE, the QTL portion of the design matrix in the simulation is a realized sampling
+#' of haplotypes from the probabilities. If FALSE, the simulations are based on the probabilities, which is flawed in
+#' terms of biological reality.
+#' @param scale.by.effect DEFAULT: FALSE. If TRUE, the effects are scaled by var(QTL effect) so that the effect matches
+#' the stated proportion of variance in a balanced population.
+#' @param scale.by.varp DEFAULT: TRUE. If TRUE, the effects are scaled by var(X %*% QTL effect) so that the effect matches
+#' the stated proportion of variance in the observed population.
+#' @export
+#' @examples sim.CC.data()
+sim.CC.data <- function(genomecache, 
+                        CC.lines=NULL, 
+                        num.lines=NULL, 
+                        vary.lines=TRUE,
+                        locus=NULL, 
+                        vary.locus=TRUE,
+                        num.replicates, 
+                        num.sim,
+                        M.ID=NULL,
+                        num.alleles=8, 
+                        num.founders=8,
+                        qtl.effect.size,
+                        beta=NULL,
+                        strain.effect.size,
+                        impute=TRUE,
+                        scale.by.effect=FALSE,
+                        scale.by.varp=TRUE){
+  
+  h <- miqtl::DiploprobReader$new(genomecache)
+  
+  ## Sampling lines
+  if(is.null(CC.lines)){
+    CC.lines <- sapply(1:ifelse(vary.lines, num.sim, 1), function(i) sample(x=h$getSubjects(), size=num.lines, replace=FALSE))
+    if(vary.lines){
+      cc.index <- 1:num.sim
+    }
+    else{
+      cc.index <- rep(1, num.sim)
+    }
+  }
+  else{
+    vary.lines <- FALSE
+    num.lines <- length(CC.lines)
+    CC.lines <- matrix(CC.lines, ncol=1)
+    cc.index <- rep(1, num.sim)
+  }
+  
+  ## Setting number of alleles to match pre-specified QTL effect - convenience
+  if(!is.null(beta)){
+    num.alleles <- length(beta)
+  }
+  
+  ## Sampling loci
+  if(is.null(locus)){
+    locus <- sample(h$getLoci(), size=ifelse(vary.locus, num.sim, 1), replace=TRUE)
+    if(vary.locus){
+      locus.index <- 1:num.sim
+    }
+    else{
+      locus.index <- rep(1, num.sim)
+    }
+  }
+  else{
+    vary.locus <- FALSE
+    locus.index <- rep(1, num.sim)
+  }
+  
+  M <- NULL
+  if(!is.null(M.ID)){
+    M <- model.matrix.from.ID(M.ID)
+    num.alleles <- length(unique(unlist(strsplit(x=M.ID, split=","))))
+  }
+  sim.matrix <- matrix(NA, nrow=nrow(CC.lines), ncol=num.sim)
+  id.matrix <- matrix(NA, nrow=nrow(CC.lines), ncol=ifelse(vary.lines, num.sim, 1))
+  for(i in 1:num.sim){
+    this.sim <- simulate.CC.qtl(CC.lines=CC.lines[,cc.index[i]], 
+                                num.replicates=num.replicates,
+                                M=M,
+                                num.alleles=num.alleles, 
+                                num.founders=num.founders,
+                                qtl.effect.size=qtl.effect.size, 
+                                strain.effect.size=strain.effect.size,
+                                impute=impute, 
+                                scale.by.varp=scale.by.varp,
+                                locus.matrix=h$getLocusMatrix(locus=locus[locus.index[i]], model="full"), 
+                                num.sim=1)$data
+    sim.matrix[,i] <- this.sim[,1]
+    if(vary.lines | i == 1){
+      id.matrix[,i] <- as.character(this.sim[,2])
+    }
+  }
+  colnames(sim.matrix) <- paste0("sim.y.", 1:num.sim)
+  colnames(id.matrix) <- paste0("SUBJECT.NAME.", 1:ncol(id.matrix))
+  
+  outcome <- data.frame(sim.matrix, id.matrix)
+  
+  return(list(data=outcome,
+              locus=locus,
+              locus.pos=list(Mb=h$getLocusStart(locus, scale="Mb"),
+                             cM=h$getLocusStart(locus, scale="cM")),
+              genomecache=genomecache,
+              properties=list(num.alleles=num.alleles,
+                              num.replicates=num.replicates,
+                              num.founders=num.founders,
+                              qtl.effect.size=qtl.effect.size, 
+                              strain.effect.size=strain.effect.size,
+                              num.lines=num.lines,
+                              impute=impute,
+                              scale.by.varp=scale.by.varp,
+                              M.ID=M.ID,
+                              vary.lines=vary.lines,
+                              vary.locus=vary.locus)))
 }
 
 simulate.CC.qtl <- function(CC.lines, 
