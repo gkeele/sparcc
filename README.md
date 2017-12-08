@@ -5,7 +5,7 @@ sparcc
 
 This package provides two primary functions:
 
-1. Simulate Collaborative Cross (CC) phenotype data from the actually CC lines
+1. Simulate Collaborative Cross (CC) phenotype data from the actual CC lines
 - Potential parameters:
   - QTL effect size
   - Overall strain effect size
