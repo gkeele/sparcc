@@ -2,14 +2,14 @@
 % Please edit documentation in R/CC_sim.R
 \name{run.sim.scans}
 \alias{run.sim.scans}
-\title{Runs the genome scans of the simulated data output by simulate.CC.data()}
+\title{Runs the genome scans of the simulated data output by sim.CC.data()}
 \usage{
 run.sim.scans(sim.data, scan.index = NULL, chr = "all",
   just.these.loci = NULL, use.progress.bar = FALSE, all.sim.qr = NULL,
   return.all.sim.qr = TRUE, ...)
 }
 \arguments{
-\item{sim.data}{Output simulated data from simulate.CC.data()}
+\item{sim.data}{Output simulated data from sim.CC.data()}
 
 \item{scan.index}{DEFAULT: NULL. If NULL, it performs scans for all simulated data sets stored in sim.data.
 If given a vector of integers, representing the simulation index, it will only run scans for those phenotypes.}
@@ -29,7 +29,7 @@ of CC lines, or a list of output for multiple samples.}
 substantially larger. Could then be used for later scans with the same set of CC lines.}
 }
 \description{
-This function takes the output from simulate.CC.data() and performs the genome scans. Internally it runs
+This function takes the output from sim.CC.data() and performs the genome scans. Internally it runs
 the require QR decompositions, which it can save for later if specified.
 }
 \examples{

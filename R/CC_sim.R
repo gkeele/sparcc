@@ -7,17 +7,17 @@
 #' directory that stores the haplotype probabilities/dosages at each locus. It has an additive model
 #' subdirectory and a full model subdirectory. Each contains subdirectories for each chromosome, which then
 #' store .RData files for the probabilities/dosages of each locus.
-#' @param CC.lines DEFAULT: NULL. If NULL is specified, simulate.CC.data() will randomly draw samples of the 
+#' @param CC.lines DEFAULT: NULL. If NULL is specified, sim.CC.data() will randomly draw samples of the 
 #' available CC lines of the size specified in num.lines.
-#' @param num.lines DEFAULT: NULL. If NULL, simulate.CC.data() expects that CC.lines is non-NULL. If CC.lines
+#' @param num.lines DEFAULT: NULL. If NULL, sim.CC.data() expects that CC.lines is non-NULL. If CC.lines
 #' is NULL, num.lines determines the number of CC lines that are sampled.
-#' @param vary.lines DEFAULT: TRUE. If CC.lines is NULL and vary.lines is TRUE, then simulate.CC.data() will
+#' @param vary.lines DEFAULT: TRUE. If CC.lines is NULL and vary.lines is TRUE, then sim.CC.data() will
 #' sample multiple sets of CC lines of the size specified in num.lines. If CC.lines is NULL and vary.lines is
 #' FALSE, then just one set of CC lines will be sampled.
-#' @param locus DEFAULT: NULL. If NULL is specified, simulate.CC.data() will randomly draw a locus stored in
+#' @param locus DEFAULT: NULL. If NULL is specified, sim.CC.data() will randomly draw a locus stored in
 #' the genome cache. 
-#' @param vary.locus DEFAULT: TRUE. If locus is NULL and vary.locus is TRUE, then simulate.CC.data() will sample
-#' as many loci as specified in num.sim. If locus is NULL and vary.locus is FALSE, then simulate.CC.data() will
+#' @param vary.locus DEFAULT: TRUE. If locus is NULL and vary.locus is TRUE, then sim.CC.data() will sample
+#' as many loci as specified in num.sim. If locus is NULL and vary.locus is FALSE, then sim.CC.data() will
 #' only sample one locus.
 #' @param num.replicates The number of replicates of each CC line that will be simulated. Mapping for power calculations
 #' will use strain means. Currently requires that all lines have the same number of replicates.
@@ -46,24 +46,24 @@
 #' @param scale.by.varp DEFAULT: TRUE. If TRUE, the effects are scaled by var(X %*% QTL effect) so that the effect matches
 #' the stated proportion of variance in the observed population.
 #' @export
-#' @examples simulate.CC.data()
-simulate.CC.data <- function(genomecache, 
-                             CC.lines=NULL, 
-                             num.lines=NULL, 
-                             vary.lines=TRUE,
-                             locus=NULL, 
-                             vary.locus=TRUE,
-                             num.replicates, 
-                             num.sim,
-                             M.ID=NULL,
-                             num.alleles=8, 
-                             num.founders=8,
-                             qtl.effect.size,
-                             beta=NULL,
-                             strain.effect.size,
-                             impute=TRUE,
-                             scale.by.effect=FALSE,
-                             scale.by.varp=TRUE){
+#' @examples sim.CC.data()
+sim.CC.data <- function(genomecache, 
+                        CC.lines=NULL, 
+                        num.lines=NULL, 
+                        vary.lines=TRUE,
+                        locus=NULL, 
+                        vary.locus=TRUE,
+                        num.replicates, 
+                        num.sim,
+                        M.ID=NULL,
+                        num.alleles=8, 
+                        num.founders=8,
+                        qtl.effect.size,
+                        beta=NULL,
+                        strain.effect.size,
+                        impute=TRUE,
+                        scale.by.effect=FALSE,
+                        scale.by.varp=TRUE){
   
   h <- miqtl::DiploprobReader$new(genomecache)
   
@@ -151,12 +151,12 @@ simulate.CC.data <- function(genomecache,
                               vary.locus=vary.locus)))
 }
 
-#' Runs the genome scans of the simulated data output by simulate.CC.data()
+#' Runs the genome scans of the simulated data output by sim.CC.data()
 #'
-#' This function takes the output from simulate.CC.data() and performs the genome scans. Internally it runs
+#' This function takes the output from sim.CC.data() and performs the genome scans. Internally it runs
 #' the require QR decompositions, which it can save for later if specified.
 #'
-#' @param sim.data Output simulated data from simulate.CC.data()
+#' @param sim.data Output simulated data from sim.CC.data()
 #' @param scan.index DEFAULT: NULL. If NULL, it performs scans for all simulated data sets stored in sim.data.
 #' If given a vector of integers, representing the simulation index, it will only run scans for those phenotypes.
 #' @param chr DEFAULT: "all". Specifies which chromosomes to scan.
@@ -389,8 +389,8 @@ simulate.QTL.model.and.effects <- function(num.alleles=8,
 #' @param thresh DEFAULT: NULL. If NULL, no significance is threshold is plotted. Expects a numeric value, commonly
 #' output from get.gev.thresholds() based on permutation scans.
 #' @export
-#' @examples plot.single.sim()
-plot.single.sim <- function(sim.scans, 
+#' @examples single.sim.plot()
+single.sim.plot <- function(sim.scans, 
                             phenotype.index=1, 
                             scale=c("Mb", "cM"), 
                             thresh=NULL, 
@@ -431,10 +431,10 @@ pull.power <- function(sim.scans, locus, thresholds){
 
 #' Generates a matrix of permutation indeces. Can be used across simulations with the same number of CC lines
 #'
-#' This function takes the output from simulate.CC.data() to produce a matrix of permutation indeces, allowing
+#' This function takes the output from sim.CC.data() to produce a matrix of permutation indeces, allowing
 #' the same permutations to be performed for different phenotypes but the same CC lines.
 #'
-#' @param sim.CC.object Simulated CC data output from simulate.CC.data().
+#' @param sim.CC.object Simulated CC data output from sim.CC.data().
 #' @param num.perm The number of permutations.
 #' @param seed DEFAULT: 1. A seed is necessary to produce the same results over multiple runs and different machines.
 #' @export
@@ -453,12 +453,12 @@ generate.permutation.index.matrix <- function(sim.CC.object,
 
 #' Runs permutation scans from a permutation index matrix, simulated CC data, and simulated CC scans.
 #'
-#' This function takes the outputs from generate.permutation.index.matrix(), simulate.CC.data(), and run.sim.scans() to perform
+#' This function takes the outputs from generate.permutation.index.matrix(), sim.CC.data(), and run.sim.scans() to perform
 #' permutation scans and determine a significance threshold. 
 #'
 #' @param perm.index.matrix Permutation index matrix that is output from generate.permutation.index.matrix().
 #' @param sim.CC.scans Genome scans from simulated CC data output from run.sim.scans().
-#' @param sim.CC.object Simulated CC data output from simulate.CC.data().
+#' @param sim.CC.object Simulated CC data output from sim.CC.data().
 #' @param phenotype.index The phenotype index of simulated phenotype that correspond to those found in sim.CC.scans
 #' and sim.CC.objects.
 #' @param all.sim.qr DEFAULT: NULL. Allows qr decompositions to only be saved once. If NULL, it expects that they are

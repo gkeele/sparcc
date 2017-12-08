@@ -7,14 +7,14 @@
 generate.permutation.index.matrix(sim.CC.object, num.perm, seed = 1)
 }
 \arguments{
-\item{sim.CC.object}{Simulated CC data output from simulate.CC.data().}
+\item{sim.CC.object}{Simulated CC data output from sim.CC.data().}
 
 \item{num.perm}{The number of permutations.}
 
 \item{seed}{DEFAULT: 1. A seed is necessary to produce the same results over multiple runs and different machines.}
 }
 \description{
-This function takes the output from simulate.CC.data() to produce a matrix of permutation indeces, allowing
+This function takes the output from sim.CC.data() to produce a matrix of permutation indeces, allowing
 the same permutations to be performed for different phenotypes but the same CC lines.
 }
 \examples{

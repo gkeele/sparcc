@@ -14,7 +14,7 @@ run.permutation.threshold.scans(perm.index.matrix, sim.CC.scans, sim.CC.object,
 
 \item{sim.CC.scans}{Genome scans from simulated CC data output from run.sim.scans().}
 
-\item{sim.CC.object}{Simulated CC data output from simulate.CC.data().}
+\item{sim.CC.object}{Simulated CC data output from sim.CC.data().}
 
 \item{phenotype.index}{The phenotype index of simulated phenotype that correspond to those found in sim.CC.scans
 and sim.CC.objects.}
@@ -36,7 +36,7 @@ If given a vector of integers, representing the permutation index, it will only 
 and genome scans.}
 }
 \description{
-This function takes the outputs from generate.permutation.index.matrix(), simulate.CC.data(), and run.sim.scans() to perform
+This function takes the outputs from generate.permutation.index.matrix(), sim.CC.data(), and run.sim.scans() to perform
 permutation scans and determine a significance threshold.
 }
 \examples{
