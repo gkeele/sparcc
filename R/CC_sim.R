@@ -399,7 +399,7 @@ single.sim.plot <- function(sim.scans,
   scale <- scale[1]
   dummy.scan <- sim.scans
   if(is.matrix(dummy.scan$p.value)){
-    dummy.scan$p.value <- sim.scans$p.value[phenotype.index]
+    dummy.scan$p.value <- sim.scans$p.value[phenotype.index,]
   }
   else{
     dummy.scan$p.value <- sim.scans$p.value
