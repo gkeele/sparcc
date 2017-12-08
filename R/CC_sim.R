@@ -244,7 +244,6 @@ sim.CC.data <- function(genomecache,
                               M.ID=M.ID,
                               vary.lines=vary.lines,
                               vary.locus=vary.locus)))
-}
 
 simulate.CC.qtl <- function(CC.lines, 
                             num.replicates,
@@ -347,6 +346,9 @@ simulate.QTL.model.and.effects <- function(num.alleles=8,
                                            ...){
   
   if(is.null(M)){
+    M <- matrix(0, num.founders, num.alleles)
+    M[cbind(sample(1:num.founders, num.alleles), 1:num.alleles)] <- 1
+    
     if(model.method == "crp"){
       for(i in which(rowSums(M)==0)){
         M[i,] <- rmultinom(1, 1, colSums(M)/sum(M))
@@ -355,8 +357,6 @@ simulate.QTL.model.and.effects <- function(num.alleles=8,
     else if(model.method == "uniform"){
       M[which(rowSums(M)==0),] <- t(rmultinom(num.founders - num.alleles, 1, rep(1/num.alleles, num.alleles)))
     }
-    M <- matrix(0, num.founders, num.alleles)
-    M[cbind(sample(1:num.founders, num.alleles), 1:num.alleles)] <- 1
   }
   
   if(is.null(beta)){
