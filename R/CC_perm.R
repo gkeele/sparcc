@@ -8,14 +8,12 @@
 #' @param seed DEFAULT: 1. A seed is necessary to produce the same results over multiple runs and different machines.
 #' @export
 #' @examples generate.permutation.index.matrix()
-generate.permutation.index.matrix <- function(sim.CC.object, 
+generate.permutation.index.matrix <- function(num.lines, 
                                               num.perm, 
                                               seed=1){
   
-  n <- nrow(sim.CC.object$data)
-  
   set.seed(seed)
-  perm.index.matrix <- replicate(n=num.perm, sample(1:n, replace=FALSE))
+  perm.index.matrix <- replicate(n=num.perm, sample(1:num.lines, replace=FALSE))
   colnames(perm.index.matrix) <- paste0("perm.", 1:num.perm)
   return(perm.index.matrix)
 }
