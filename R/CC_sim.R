@@ -445,4 +445,46 @@ incidence.matrix <- function(fact){
   colnames(m) <- levels(fact)
   return(m)
 }
+
+#' @export
+extract.compact.qr <- function(genomecache, 
+                               CC.lines.matrix){
+  
+  results <- list(qr.alt.list=list())
+  for(i in 1:ncol(CC.lines.matrix)){
+    this.qr <- extract.qr(genomecache=genomecache, model="additive",
+                          formula=~1, id="SUBJECT.NAME.1", data=data.frame(SUBJECT.NAME.1=CC.lines.matrix[,i]))
+    results$qr.alt.list[[i]] <- this.qr$qr.list
+    if(i == 1){
+      results$shared <- list(intercept.allele=this.qr$intercept.allele,
+                             condition.loci=this.qr$condition.loci,
+                             qr.0=this.qr$qr.0,
+                             chr=this.qr$chr,
+                             pos=this.qr$pos,
+                             model=this.qr$model,
+                             founders=this.qr$founders,
+                             subjects=this.qr$subjects,
+                             formula=this.qr$formula)
+    }
+  }
+  return(results)
+}
+
+#' @export
+pull.qr.from.compact <- function(compact.qr.list, 
+                                 qr.index){
+  
+  output.qr <- list(qr.list=compact.qr.list$qr.alt.list[[i]],
+                    intercept.allele=compact.qr.list$shared$intercept.allele,
+                    condition.loci=compact.qr.list$shared$condition.loci,
+                    qr.0=compact.qr.list$shared$qr.0,
+                    chr=compact.qr.list$shared$chr,
+                    pos=compact.qr.list$shared$pos,
+                    model=compact.qr.list$shared$model,
+                    founders=compact.qr.list$shared$founders,
+                    subjects=compact.qr.list$shared$subjects,
+                    formula=compact.qr.list$shared$formula)
+  return(output.qr)
+}
+
   
