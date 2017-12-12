@@ -72,7 +72,7 @@ run.sim.scans <- function(sim.data,
       this.id <- paste0("SUBJECT.NAME.", i)
     }
     else{ this.id <- "SUBJECT.NAME.1" }
-    this.scan <- miqtl::scan.qr(qr.object=this.qr, data=sim.data$data, 
+    this.scan <- scan.qr(qr.object=this.qr, data=sim.data$data, 
                                 phenotype=paste0("sim.y.", i), id=this.id, chr=chr, 
                                 return.allele.effects=FALSE, use.progress.bar=use.progress.bar,
                                 ...)
