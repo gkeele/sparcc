@@ -474,7 +474,7 @@ extract.compact.qr <- function(genomecache,
 pull.qr.from.compact <- function(compact.qr.list, 
                                  qr.index){
   
-  output.qr <- list(qr.list=compact.qr.list$qr.alt.list[[i]],
+  output.qr <- list(qr.list=compact.qr.list$qr.alt.list[[qr.index]],
                     intercept.allele=compact.qr.list$shared$intercept.allele,
                     condition.loci=compact.qr.list$shared$condition.loci,
                     qr.0=compact.qr.list$shared$qr.0,
