@@ -54,9 +54,11 @@ run.permutation.threshold.scans <- function(perm.index.matrix,
   
   if(is.null(scan.index)){ scan.index <- 1:ncol(perm.index.matrix) }
   
+  is.full <- ifelse(is.null(all.sim.qr), TRUE, FALSE)
   if(is.null(all.sim.qr)){
     all.sim.qr <- sim.CC.scans$all.sim.qr
   }
+
   if(sim.CC.scans$properties$vary.lines){
     loci <- names(all.sim.qr[[1]]$qr.list)
     rh.formula <- all.sim.qr[[1]]$formula
@@ -94,7 +96,12 @@ run.permutation.threshold.scans <- function(perm.index.matrix,
   min.p <- rep(NA, length(scan.index))
   
   if(sim.CC.scans$properties$vary.lines){
-    this.qr <- all.sim.qr[[phenotype.index]]
+    if(is.full){
+      this.qr <- all.sim.qr[[phenotype.index]]
+    }
+    else{
+      this.qr <- all.sim.qr
+    }
   }
   else{
     this.qr <- all.sim.qr

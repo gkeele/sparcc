@@ -27,7 +27,7 @@ run.sim.scans <- function(sim.data,
                           ...){
   
   if(is.null(scan.index)){ 
-    scan.index <- 1:length(sim.data$data)
+    scan.index <- 1:sum(grepl("sim.y", colnames(sim.data$data)))
   }
   h <- miqtl::DiploprobReader$new(sim.data$genomecache)
   loci <- h$getLoci()
@@ -58,11 +58,11 @@ run.sim.scans <- function(sim.data,
     }
     this.id <- "SUBJECT.NAME.1"
   }
-  
+  compute.qr.boolean <- is.null(all.sim.qr)
   if(return.all.sim.qr & is.null(all.sim.qr)){ all.sim.qr <- list() }
   for(i in 1:length(scan.index)){
     if(sim.data$properties$vary.lines){
-      if(is.null(all.sim.qr)){
+      if(compute.qr.boolean){
         this.qr <- miqtl::extract.qr(genomecache=sim.data$genomecache, model="additive",
                                      formula=~1, data=sim.data$data,
                                      id=paste0("SUBJECT.NAME.", i),
@@ -139,8 +139,6 @@ run.sim.scans <- function(sim.data,
 #' @param impute DEFAULT: TRUE. If TRUE, the QTL portion of the design matrix in the simulation is a realized sampling
 #' of haplotypes from the probabilities. If FALSE, the simulations are based on the probabilities, which is flawed in
 #' terms of biological reality.
-#' @param scale.by.effect DEFAULT: FALSE. If TRUE, the effects are scaled by var(QTL effect) so that the effect matches
-#' the stated proportion of variance in a balanced population.
 #' @param scale.by.varp DEFAULT: TRUE. If TRUE, the effects are scaled by var(X %*% QTL effect) so that the effect matches
 #' the stated proportion of variance in the observed population.
 #' @export
@@ -160,7 +158,6 @@ sim.CC.data <- function(genomecache,
                         beta=NULL,
                         strain.effect.size,
                         impute=TRUE,
-                        scale.by.effect=TRUE,
                         scale.by.varp=FALSE){
   
   h <- miqtl::DiploprobReader$new(genomecache)
@@ -225,7 +222,7 @@ sim.CC.data <- function(genomecache,
                                 num.founders=num.founders,
                                 qtl.effect.size=qtl.effect.size, 
                                 strain.effect.size=strain.effect.size,
-                                impute=impute, 
+                                impute=impute,
                                 scale.by.varp=scale.by.varp,
                                 locus.matrix=h$getLocusMatrix(locus=locus[locus.index[i]], model="full"), 
                                 num.sim=1)$data
@@ -268,8 +265,7 @@ simulate.CC.qtl <- function(CC.lines,
                             locus.matrix, 
                             num.sim,
                             impute=TRUE, 
-                            scale.by.varp=TRUE,
-                            scale.by.effect=FALSE,
+                            scale.by.varp=FALSE,
                             ...){
   
   this.locus.matrix <- locus.matrix[CC.lines,]
@@ -284,7 +280,6 @@ simulate.CC.qtl <- function(CC.lines,
                                                  M=M,
                                                  effect.var=qtl.effect.size, 
                                                  beta=beta,
-                                                 scale.by.effect=scale.by.effect,
                                                  ...)
     if(impute){
       this.locus.matrix <- t(apply(this.locus.matrix, 1, function(x) rmultinom(1, 1, x)))
@@ -302,11 +297,11 @@ simulate.CC.qtl <- function(CC.lines,
   if(strain.effect.size != 0){
     this.strain.matrix <- incidence.matrix(factor(CC.lines, levels=CC.lines))
     this.strain.matrix <- this.strain.matrix[rep(1:nrow(this.strain.matrix), each=num.replicates),]
-    strain.effect <- rnorm(mean=0, sd=sqrt(strain.effect.size), n=length(CC.lines))
+    
+    strain.effect <- rnorm(n=length(CC.lines))
     strain.effect <- as.vector(scale(strain.effect))
-    if(scale.by.effect){
-      strain.effect <- as.vector(strain.effect*sqrt(strain.effect.size)) 
-    }
+    strain.effect <- as.vector(strain.effect*sqrt(strain.effect.size)) 
+
     strain.predictor <- this.strain.matrix %*% matrix(strain.effect, ncol=1)
 
     if(scale.by.varp){
@@ -315,7 +310,6 @@ simulate.CC.qtl <- function(CC.lines,
     }
   }
   else{ strain.predictor <- rep(0, length(CC.lines)) }
-
   
   sim.outcome <- sapply(1:num.sim, 
                         function(i) QTL.predictor + strain.predictor + calc.scaled.residual(qtl.effect.size=qtl.effect.size, 
@@ -340,7 +334,7 @@ calc.scaled.residual <- function(qtl.effect.size,
                                  strain.effect.size, 
                                  n){
 
-  residual <- rnorm(mean=0, sd=sqrt(1 - qtl.effect.size - strain.effect.size), n=n)
+  residual <- rnorm(n=n)
   residual <- as.vector(scale(residual))
   residual <- as.vector(residual*sqrt(1 - qtl.effect.size - strain.effect.size))
   return(residual)
@@ -351,10 +345,8 @@ simulate.QTL.model.and.effects <- function(num.alleles=8,
                                            num.founders=8, 
                                            M=NULL,
                                            model.method="crp", 
-                                           effect.type="random", 
                                            effect.var, 
                                            beta=NULL,
-                                           scale.by.effect=TRUE,
                                            ...){
   
   if(is.null(M)){
@@ -372,19 +364,11 @@ simulate.QTL.model.and.effects <- function(num.alleles=8,
   }
   
   if(is.null(beta)){
-    if(effect.type == "random"){
-      beta <- rnorm(num.alleles)
-    } 
-    else if(effect.type == "even"){
-      beta <- 1:num.alleles
-    }  
+    beta <- 1:num.alleles
   }
+  beta <- as.vector(scale(beta))
+  beta <- as.vector(0.5*beta*sqrt(effect.var)) 
   
-   beta <- as.vector(scale(beta))
-  if(scale.by.effect){
-    beta <- as.vector(0.5*beta*sqrt(effect.var)) 
-  }
-
   effect <- list(M=M, 
                  beta=beta)
   return(effect)
