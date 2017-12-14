@@ -450,7 +450,7 @@ incidence.matrix <- function(fact){
 extract.compact.qr <- function(genomecache, 
                                CC.lines.matrix){
   
-  results <- list(qr.alt.list=list())
+  results <- list(qr.alt.list=list(), CC.lines.matrix=CC.lines.matrix)
   for(i in 1:ncol(CC.lines.matrix)){
     this.qr <- extract.qr(genomecache=genomecache, model="additive",
                           formula=~1, id="SUBJECT.NAME.1", data=data.frame(SUBJECT.NAME.1=CC.lines.matrix[,i]))
@@ -463,7 +463,6 @@ extract.compact.qr <- function(genomecache,
                              pos=this.qr$pos,
                              model=this.qr$model,
                              founders=this.qr$founders,
-                             subjects=this.qr$subjects,
                              formula=this.qr$formula)
     }
   }
@@ -482,7 +481,7 @@ pull.qr.from.compact <- function(compact.qr.list,
                     pos=compact.qr.list$shared$pos,
                     model=compact.qr.list$shared$model,
                     founders=compact.qr.list$shared$founders,
-                    subjects=compact.qr.list$shared$subjects,
+                    subjects=compact.qr.list$CC.lines.matrix[,qr.index],
                     formula=compact.qr.list$shared$formula)
   return(output.qr)
 }
