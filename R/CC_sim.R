@@ -45,10 +45,7 @@ run.sim.scans <- function(sim.data,
   these.pos <- list(Mb=h$getLocusStart(loci, scale="Mb"),
                     cM=h$getLocusStart(loci, scale="cM"))
   
-  if(sim.data$properties$vary.lines){
-    all.sim.qr <- NULL
-  }
-  else{
+  if(!sim.data$properties$vary.lines){
     if(is.null(all.sim.qr)){
       this.qr <- miqtl::extract.qr(genomecache=sim.data$genomecache, model="additive",
                                    formula=~1, data=sim.data$data, 
@@ -59,20 +56,26 @@ run.sim.scans <- function(sim.data,
     else{
       this.qr <- all.sim.qr
     }
+    this.id <- "SUBJECT.NAME.1"
   }
   
   if(return.all.sim.qr & is.null(all.sim.qr)){ all.sim.qr <- list() }
   for(i in 1:length(scan.index)){
     if(sim.data$properties$vary.lines){
-      this.qr <- miqtl::extract.qr(genomecache=sim.data$genomecache, model="additive",
-                                   formula=~1, data=sim.data$data,
-                                   id=paste0("SUBJECT.NAME.", i),
-                                   just.these.loci=just.these.loci, chr=chr,
-                                   use.progress.bar=use.progress.bar)
+      if(is.null(all.sim.qr)){
+        this.qr <- miqtl::extract.qr(genomecache=sim.data$genomecache, model="additive",
+                                     formula=~1, data=sim.data$data,
+                                     id=paste0("SUBJECT.NAME.", i),
+                                     just.these.loci=just.these.loci, chr=chr,
+                                     use.progress.bar=use.progress.bar)
+      }
+      else{
+        this.qr <- pull.qr.from.compact(compact.qr.list=all.sim.qr, 
+                                        qr.index=scan.index[i])
+      }
       this.id <- paste0("SUBJECT.NAME.", i)
     }
-    else{ this.id <- "SUBJECT.NAME.1" }
-    this.scan <- scan.qr(qr.object=this.qr, data=sim.data$data, 
+    this.scan <- miqtl::scan.qr(qr.object=this.qr, data=sim.data$data, 
                                 phenotype=paste0("sim.y.", i), id=this.id, chr=chr, 
                                 return.allele.effects=FALSE, use.progress.bar=use.progress.bar,
                                 ...)
@@ -157,8 +160,8 @@ sim.CC.data <- function(genomecache,
                         beta=NULL,
                         strain.effect.size,
                         impute=TRUE,
-                        scale.by.effect=FALSE,
-                        scale.by.varp=TRUE){
+                        scale.by.effect=TRUE,
+                        scale.by.varp=FALSE){
   
   h <- miqtl::DiploprobReader$new(genomecache)
   
@@ -173,10 +176,18 @@ sim.CC.data <- function(genomecache,
     }
   }
   else{
-    vary.lines <- FALSE
-    num.lines <- length(CC.lines)
-    CC.lines <- matrix(CC.lines, ncol=1)
-    cc.index <- rep(1, num.sim)
+    if(is.vector(CC.lines)){
+      CC.lines <- matrix(CC.lines, ncol=1)
+      vary.lines <- FALSE
+      num.lines <- length(CC.lines)
+      cc.index <- rep(1, num.sim)
+    }
+    else{
+      vary.lines <- TRUE
+      num.lines <- nrow(CC.lines)
+      num.sim <- ncol(CC.lines)
+      cc.index <- 1:num.sim
+    }
   }
   
   ## Setting number of alleles to match pre-specified QTL effect - convenience
