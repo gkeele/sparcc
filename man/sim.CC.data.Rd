@@ -8,7 +8,7 @@ sim.CC.data(genomecache, CC.lines = NULL, num.lines = NULL,
   vary.lines = TRUE, locus = NULL, vary.locus = TRUE, num.replicates,
   num.sim, M.ID = NULL, num.alleles = 8, num.founders = 8,
   qtl.effect.size, beta = NULL, strain.effect.size, impute = TRUE,
-  scale.by.effect = FALSE, scale.by.varp = TRUE)
+  scale.by.varp = FALSE)
 }
 \arguments{
 \item{genomecache}{The path to the genome cache directory. The genome cache is a particularly structured
@@ -63,9 +63,6 @@ is in proportion of the phenotypic variance due to the strain, thus should be gr
 \item{impute}{DEFAULT: TRUE. If TRUE, the QTL portion of the design matrix in the simulation is a realized sampling
 of haplotypes from the probabilities. If FALSE, the simulations are based on the probabilities, which is flawed in
 terms of biological reality.}
-
-\item{scale.by.effect}{DEFAULT: FALSE. If TRUE, the effects are scaled by var(QTL effect) so that the effect matches
-the stated proportion of variance in a balanced population.}
 
 \item{scale.by.varp}{DEFAULT: TRUE. If TRUE, the effects are scaled by var(X %*% QTL effect) so that the effect matches
 the stated proportion of variance in the observed population.}
