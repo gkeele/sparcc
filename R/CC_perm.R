@@ -10,9 +10,10 @@
 #' @examples generate.permutation.index.matrix()
 generate.permutation.index.matrix <- function(num.lines, 
                                               num.perm, 
-                                              seed=1){
-  
-  set.seed(seed)
+                                              seed=NULL){
+  if(!is.null(seed)){
+    set.seed(seed)
+  }
   perm.index.matrix <- replicate(n=num.perm, sample(1:num.lines, replace=FALSE))
   colnames(perm.index.matrix) <- paste0("perm.", 1:num.perm)
   return(perm.index.matrix)
