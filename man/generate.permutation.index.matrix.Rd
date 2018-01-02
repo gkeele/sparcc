@@ -4,12 +4,13 @@
 \alias{generate.permutation.index.matrix}
 \title{Generates a matrix of permutation indeces. Can be used across simulations with the same number of CC lines}
 \usage{
-generate.permutation.index.matrix(num.lines, num.perm, seed = 1)
+generate.permutation.index.matrix(num.lines, num.perm, seed = NULL)
 }
 \arguments{
 \item{num.perm}{The number of permutations.}
 
-\item{seed}{DEFAULT: 1. A seed is necessary to produce the same results over multiple runs and different machines.}
+\item{seed}{DEFAULT: NULL. A seed is necessary to produce the same results over multiple runs and on different machines. If NULL
+seed can be set outside of function to allow for replicable results.}
 
 \item{sim.CC.object}{Simulated CC data output from sim.CC.data().}
 }

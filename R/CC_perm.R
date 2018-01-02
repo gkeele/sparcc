@@ -5,7 +5,8 @@
 #'
 #' @param sim.CC.object Simulated CC data output from sim.CC.data().
 #' @param num.perm The number of permutations.
-#' @param seed DEFAULT: 1. A seed is necessary to produce the same results over multiple runs and different machines.
+#' @param seed DEFAULT: NULL. A seed is necessary to produce the same results over multiple runs and on different machines. If NULL
+#' seed can be set outside of function to allow for replicable results.
 #' @export
 #' @examples generate.permutation.index.matrix()
 generate.permutation.index.matrix <- function(num.lines, 
