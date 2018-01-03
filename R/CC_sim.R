@@ -443,12 +443,17 @@ incidence.matrix <- function(fact){
 
 #' @export
 extract.compact.qr <- function(genomecache, 
-                               CC.lines.matrix){
+                               CC.lines.matrix,
+                               use.progress.bar=TRUE){
   
   results <- list(qr.alt.list=list(), CC.lines.matrix=CC.lines.matrix)
   for(i in 1:ncol(CC.lines.matrix)){
-    this.qr <- extract.qr(genomecache=genomecache, model="additive",
-                          formula=~1, id="SUBJECT.NAME.1", data=data.frame(SUBJECT.NAME.1=CC.lines.matrix[,i]))
+    this.qr <- extract.qr(genomecache=genomecache, 
+                          model="additive",
+                          formula=~1, 
+                          id="SUBJECT.NAME.1", 
+                          data=data.frame(SUBJECT.NAME.1=CC.lines.matrix[,i]),
+                          use.progress.bar=use.progress.bar)
     results$qr.alt.list[[i]] <- this.qr$qr.list
     if(i == 1){
       results$shared <- list(intercept.allele=this.qr$intercept.allele,
