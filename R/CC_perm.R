@@ -40,7 +40,7 @@ generate.permutation.index.matrix <- function(num.lines,
 #' @param just.these.loci DEFAULT: NULL. If NULL, all loci in genome cache are scanned.
 #' @param use.progress.bar DEFAULT: FALSE. Specifies whether to use a progress bar for qr decompositions 
 #' and genome scans. 
-#' @param print.threshold.progress DEFAULT: TRUE Specifies whether to output a message that indicates the number of permutation
+#' @param print.scans.progress DEFAULT: FALSE. Specifies whether to output a message that indicates the number of permutation
 #' scans completed. 
 #' @export
 #' @examples run.permutation.threshold.scans()
@@ -54,7 +54,7 @@ run.permutation.threshold.scans <- function(perm.index.matrix,
                                             chr="all", 
                                             just.these.loci=NULL, 
                                             use.progress.bar=FALSE,
-                                            print.threshold.progress=TRUE,
+                                            print.scans.progress=FALSE,
                                             ...){
   
   if(is.null(scan.index)){ scan.index <- 1:ncol(perm.index.matrix) }
@@ -124,7 +124,7 @@ run.permutation.threshold.scans <- function(perm.index.matrix,
       full.p[i,] <- this.scan$p.value
     }
     min.p[i] <-  min(this.scan$p.value)
-    if(print.threshold.progress){
+    if(print.scans.progress){
       cat("\n", "Threshold scan: index", scan.index[i], "complete ---------- final index of this run:", scan.index[length(scan.index)], "\n")
     }
   }

@@ -7,7 +7,7 @@
 run.permutation.threshold.scans(perm.index.matrix, sim.CC.scans, sim.CC.object,
   phenotype.index, all.sim.qr = NULL, keep.full.scans = TRUE,
   scan.index = NULL, chr = "all", just.these.loci = NULL,
-  use.progress.bar = FALSE, print.threshold.progress = TRUE, ...)
+  use.progress.bar = FALSE, print.scans.progress = FALSE, ...)
 }
 \arguments{
 \item{perm.index.matrix}{Permutation index matrix that is output from generate.permutation.index.matrix().}
@@ -35,7 +35,7 @@ If given a vector of integers, representing the permutation index, it will only 
 \item{use.progress.bar}{DEFAULT: FALSE. Specifies whether to use a progress bar for qr decompositions 
 and genome scans.}
 
-\item{print.threshold.progress}{DEFAULT: TRUE Specifies whether to output a message that indicates the number of permutation
+\item{print.scans.progress}{DEFAULT: FALSE. Specifies whether to output a message that indicates the number of permutation
 scans completed.}
 }
 \description{

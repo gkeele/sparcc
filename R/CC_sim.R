@@ -10,6 +10,8 @@
 #' @param just.these.loci DEFAULT: NULL. If NULL, all loci in genome cache are scanned.
 #' @param use.progress.bar DEFAULT: FALSE. Specifies whether to use a progress bar for qr decompositions 
 #' and genome scans. 
+#' @param print.scans.progress DEFAULT: FALSE. Specifies whether to output a message that indicates the number of
+#' scans completed.
 #' @param all.sim.qr DEFAULT: NULL. If NULL, necessary qr decompositions are performed, which will slow down
 #' the function significantly. If non-NULL, it expects either output from miqtl::extract.qr for a single sample
 #' of CC lines, or a list of output for multiple samples.
@@ -22,6 +24,7 @@ run.sim.scans <- function(sim.data,
                           chr="all", 
                           just.these.loci=NULL,
                           use.progress.bar=FALSE,
+                          print.scans.progress=FALSE,
                           all.sim.qr=NULL,
                           return.all.sim.qr=TRUE,
                           ...){
@@ -81,7 +84,9 @@ run.sim.scans <- function(sim.data,
                                 ...)
     full.p[i,] <- this.scan$p.value
     if(return.all.sim.qr & sim.data$properties$vary.lines){ all.sim.qr[[i]] <- this.qr }
-    cat("\n", "Simulation scan: index", scan.index[i], "complete ---------- final index of this run:", scan.index[length(scan.index)], "\n")
+    if(print.scans.progress){
+      cat("\n", "Simulation scan: index", scan.index[i], "complete ---------- final index of this run:", scan.index[length(scan.index)], "\n")
+    }
   }
   output <- list(LOD=NULL,
                  p.value=full.p,

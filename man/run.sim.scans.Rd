@@ -5,7 +5,8 @@
 \title{Runs the genome scans of the simulated data output by sim.CC.data()}
 \usage{
 run.sim.scans(sim.data, scan.index = NULL, chr = "all",
-  just.these.loci = NULL, use.progress.bar = FALSE, all.sim.qr = NULL,
+  just.these.loci = NULL, use.progress.bar = FALSE,
+  print.scans.progress = FALSE, all.sim.qr = NULL,
   return.all.sim.qr = TRUE, ...)
 }
 \arguments{
@@ -20,6 +21,9 @@ If given a vector of integers, representing the simulation index, it will only r
 
 \item{use.progress.bar}{DEFAULT: FALSE. Specifies whether to use a progress bar for qr decompositions 
 and genome scans.}
+
+\item{print.scans.progress}{DEFAULT: FALSE. Specifies whether to output a message that indicates the number of
+scans completed.}
 
 \item{all.sim.qr}{DEFAULT: NULL. If NULL, necessary qr decompositions are performed, which will slow down
 the function significantly. If non-NULL, it expects either output from miqtl::extract.qr for a single sample
