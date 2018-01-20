@@ -8,7 +8,8 @@ sim.CC.data(genomecache, CC.lines = NULL, num.lines = NULL,
   vary.lines = TRUE, locus = NULL, vary.locus = TRUE, num.replicates,
   num.sim, M.ID = NULL, num.alleles = 8, num.founders = 8,
   qtl.effect.size, beta = NULL, strain.effect.size, impute = TRUE,
-  scale.by.varp = FALSE)
+  scale.by.varp = FALSE, return.value = c("means", "fixef.resid",
+  "ranef.resid"))
 }
 \arguments{
 \item{genomecache}{The path to the genome cache directory. The genome cache is a particularly structured
@@ -66,6 +67,10 @@ terms of biological reality.}
 
 \item{scale.by.varp}{DEFAULT: TRUE. If TRUE, the effects are scaled by var(X %*% QTL effect) so that the effect matches
 the stated proportion of variance in the observed population.}
+
+\item{return.value}{DEFAULT: "means". If "means", the data are strain means. If "fixef.resid", then the data
+are residuals after regressing phenotype on strain. If "ranef.resid", then the data have had the strain BLUP
+effect subtracted.}
 }
 \description{
 This function takes various input parameters to simulate CC data to be used in power calculations or as input data for 
