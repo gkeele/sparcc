@@ -341,10 +341,13 @@ simulate.CC.qtl <- function(CC.lines,
   
     ## Taking residuals
     if (return.value == "fixef.resid") {
-      sim.data$sim.y.1 <- take.fixef.residuals(data=sim.data)
+      sim.data$sim.y.1 <- take.fixef.residuals(data=sim.data, 
+                                               locus.matrix=this.locus.matrix, 
+                                               strain.matrix=this.strain.matrix)
     }
     else if (return.value == "ranef.resid") {
-      sim.data$sim.y.1 <- take.ranef.residuals(data=sim.data)
+      sim.data$sim.y.1 <- take.ranef.residuals(data=sim.data,
+                                               locus.matrix=this.locus.matrix)
     }
   }
   
@@ -357,13 +360,37 @@ simulate.CC.qtl <- function(CC.lines,
                               impute=impute)))
 }
 
-take.fixef.residuals <- function(data){
-  this.fit <- lm(sim.y.1~SUBJECT.NAME, data=data)
-  return(this.fit$residuals)
+take.fixef.residuals <- function(data, locus.matrix, strain.matrix){
+  locus.matrix <- locus.matrix[,-which.max(colSums(locus.matrix))]
+  rownames(locus.matrix) <- NULL
+  colnames(locus.matrix) <- paste("allele", 1:ncol(locus.matrix), sep=".")
+  
+  strain.matrix <- strain.matrix[,-1]
+  
+  temp.data <- data.frame(data, locus.matrix, strain.matrix)
+  this.formula <- formula(paste("sim.y.1~1", 
+                               paste(paste("allele", 1:ncol(locus.matrix), sep="."), collapse="+"),
+                               paste(colnames(strain.matrix), collapse="+"),
+                               sep="+"))
+  this.fit <- lm(this.formula, data=temp.data)
+  
+  drop.na <- is.na(this.fit$coefficients[colnames(strain.matrix)])
+  
+  these.residuals <- data$sim.y.1 - strain.matrix[,!drop.na] %*% this.fit$coefficients[colnames(strain.matrix)][!drop.na]
+  return(these.residuals)
 }
 
-take.ranef.residuals <- function(data){
-  this.fit <- lme4::lmer(sim.y.1~1|SUBJECT.NAME, data=data)
+take.ranef.residuals <- function(data, locus.matrix){
+  locus.matrix <- locus.matrix[,-which.max(colSums(locus.matrix))]
+  rownames(locus.matrix) <- NULL
+  colnames(locus.matrix) <- paste("allele", 1:ncol(locus.matrix), sep=".")
+  
+  temp.data <- data.frame(data, locus.matrix)
+  this.formula <- formula(paste0("sim.y.1~", 
+                                paste(paste("allele", 1:ncol(locus.matrix), sep="."), collapse="+"),
+                                "+(1|SUBJECT.NAME)"))
+
+  this.fit <- lme4::lmer(this.formula, data=temp.data)
   these.residuals <- data$sim.y.1 - lme4::ranef(this.fit)$SUBJECT.NAME[data$SUBJECT.NAME,]
   return(these.residuals)
 }
@@ -439,6 +466,8 @@ single.sim.plot <- function(sim.scans,
   else{
     dummy.scan$p.value <- sim.scans$p.value
   }
+  dummy.scan$p.value[dummy.scan$p.value == 0] <- .Machine$double.xmin
+  
   if(length(sim.scans$locus) > 1){
     locus <- sim.scans$locus[phenotype.index]
   }
