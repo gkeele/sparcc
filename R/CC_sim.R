@@ -146,9 +146,11 @@ run.sim.scans <- function(sim.data,
 #' terms of biological reality.
 #' @param scale.by.varp DEFAULT: TRUE. If TRUE, the effects are scaled by var(X %*% QTL effect) so that the effect matches
 #' the stated proportion of variance in the observed population.
-#' @param return.value DEFAULT: "means". If "means", the data are strain means. If "fixef.resid", then the data
+#' @param return.value DEFAULT: "raw". If "raw", residuals are not taken. If "fixef.resid", then the data
 #' are residuals after regressing phenotype on strain. If "ranef.resid", then the data have had the strain BLUP
 #' effect subtracted.
+#' @param return.means DEFAULT: TRUE. If TRUE, strain means are returned. If FALSE, the full data
+#' with replicate observations of strains are returned.
 #' @export
 #' @examples sim.CC.data()
 sim.CC.data <- function(genomecache, 
