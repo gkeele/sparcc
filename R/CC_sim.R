@@ -167,8 +167,8 @@ sim.CC.data <- function(genomecache,
                         strain.effect.size,
                         impute=TRUE,
                         scale.by.varp=FALSE,
-                        return.value=c("means", "fixef.resid", "ranef.resid")
-                        ){
+                        return.value=c("raw", "fixef.resid", "ranef.resid"),
+                        return.means=TRUE){
   
   h <- miqtl::DiploprobReader$new(genomecache)
   return.value=return.value[1]
@@ -197,7 +197,7 @@ sim.CC.data <- function(genomecache,
       cc.index <- 1:num.sim
     }
   }
-  num.ind <- ifelse(return.value == "means", num.lines, num.lines*num.replicates)
+  num.ind <- ifelse(return.means, num.lines, num.lines*num.replicates)
   
   ## Setting number of alleles to match pre-specified QTL effect - convenience
   if(!is.null(beta)){
@@ -238,6 +238,7 @@ sim.CC.data <- function(genomecache,
                                 scale.by.varp=scale.by.varp,
                                 locus.matrix=h$getLocusMatrix(locus=locus[locus.index[i]], model="full"),
                                 return.value=return.value,
+                                return.means=return.means,
                                 num.sim=1)$data
     sim.matrix[,i] <- this.sim[,1]
     if(vary.lines | i == 1){
@@ -278,7 +279,8 @@ simulate.CC.qtl <- function(CC.lines,
                             num.sim,
                             impute=TRUE, 
                             scale.by.varp=FALSE,
-                            return.value=c("means", "fixef.resid", "ranef.resid"),
+                            return.value=c("raw", "fixef.resid", "ranef.resid"),
+                            return.means=TRUE,
                             ...){
   
   return.value <- return.value[1]
@@ -325,32 +327,27 @@ simulate.CC.qtl <- function(CC.lines,
   }
   else{ strain.predictor <- rep(0, length(CC.lines)) }
   
-  sim.outcome <- sapply(1:num.sim, function(i) QTL.predictor + strain.predictor + calc.scaled.residual(qtl.effect.size=qtl.effect.size, 
-                                                                                                       strain.effect.size=strain.effect.size,
-                                                                                                       n=nrow(this.locus.matrix)))
+  sim.data <- sapply(1:num.sim, function(i) QTL.predictor + strain.predictor + calc.scaled.residual(qtl.effect.size=qtl.effect.size, 
+                                                                                                    strain.effect.size=strain.effect.size,
+                                                                                                    n=nrow(this.locus.matrix)))
+  colnames(sim.data) <- paste0("sim.y.", 1:ncol(sim.data))
+  sim.data <- data.frame(sim.data, "SUBJECT.NAME"=rep(CC.lines, each=num.replicates))
   
-  if (return.value == "means") {
-    sim.data <- apply(sim.outcome, 2, function(x) tapply(x, INDEX=as.factor(rep(CC.lines, each=num.replicates)), FUN=mean))
+  ## Taking residuals
+  if (return.value == "fixef.resid") {
+    sim.data$sim.y.1 <- take.fixef.residuals(data=sim.data, 
+                                             locus.matrix=this.locus.matrix, 
+                                             strain.matrix=this.strain.matrix)
+  }
+  else if (return.value == "ranef.resid") {
+    sim.data$sim.y.1 <- take.ranef.residuals(data=sim.data,
+                                             locus.matrix=this.locus.matrix)
+  }
+  if(return.means){
+    sim.data <- apply(sim.data[,-ncol(sim.data), drop=FALSE], 2, function(x) tapply(x, INDEX=as.factor(rep(CC.lines, each=num.replicates)), FUN=mean))
     colnames(sim.data) <- paste0("sim.y.", 1:ncol(sim.data))
     sim.data <- data.frame(sim.data, "SUBJECT.NAME"=rownames(sim.data))
   }
-  else {
-    sim.data <- sim.outcome
-    colnames(sim.data) <- paste0("sim.y.", 1:ncol(sim.data))
-    sim.data <- data.frame(sim.data, "SUBJECT.NAME"=rep(CC.lines, each=num.replicates))
-  
-    ## Taking residuals
-    if (return.value == "fixef.resid") {
-      sim.data$sim.y.1 <- take.fixef.residuals(data=sim.data, 
-                                               locus.matrix=this.locus.matrix, 
-                                               strain.matrix=this.strain.matrix)
-    }
-    else if (return.value == "ranef.resid") {
-      sim.data$sim.y.1 <- take.ranef.residuals(data=sim.data,
-                                               locus.matrix=this.locus.matrix)
-    }
-  }
-  
   return(list(data=sim.data,
               properties=list(qtl.effect.size=qtl.effect.size,
                               strain.effect.size=strain.effect.size,
