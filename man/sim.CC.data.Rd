@@ -8,7 +8,7 @@ sim.CC.data(genomecache, CC.lines = NULL, num.lines = NULL,
   vary.lines = TRUE, locus = NULL, vary.locus = TRUE, num.replicates,
   num.sim, M.ID = NULL, num.alleles = 8, num.founders = 8,
   qtl.effect.size, beta = NULL, strain.effect.size, impute = TRUE,
-  scale.by.varp = FALSE, return.value = c("raw", "fixef.resid",
+  scale.by.varp = FALSE, return.value = c("rescale", "raw", "fixef.resid",
   "ranef.resid"), return.means = TRUE)
 }
 \arguments{
@@ -68,7 +68,9 @@ terms of biological reality.}
 \item{scale.by.varp}{DEFAULT: TRUE. If TRUE, the effects are scaled by var(X %*% QTL effect) so that the effect matches
 the stated proportion of variance in the observed population.}
 
-\item{return.value}{DEFAULT: "raw". If "raw", residuals are not taken. If "fixef.resid", then the data
+\item{return.value}{DEFAULT: "rescale". If "rescale", the strong assumptions is made that in the actual mapping experiment,
+the strain effect can be perfectly accounted for and controlled, and the QTL effect and noise effect are re-scaled accordingly.
+If "raw", residuals are not taken. If "fixef.resid", then the data
 are residuals after regressing phenotype on strain. If "ranef.resid", then the data have had the strain BLUP
 effect subtracted.}
 

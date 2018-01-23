@@ -146,7 +146,9 @@ run.sim.scans <- function(sim.data,
 #' terms of biological reality.
 #' @param scale.by.varp DEFAULT: TRUE. If TRUE, the effects are scaled by var(X %*% QTL effect) so that the effect matches
 #' the stated proportion of variance in the observed population.
-#' @param return.value DEFAULT: "raw". If "raw", residuals are not taken. If "fixef.resid", then the data
+#' @param return.value DEFAULT: "rescale". If "rescale", the strong assumptions is made that in the actual mapping experiment,
+#' the strain effect can be perfectly accounted for and controlled, and the QTL effect and noise effect are re-scaled accordingly.
+#' If "raw", residuals are not taken. If "fixef.resid", then the data
 #' are residuals after regressing phenotype on strain. If "ranef.resid", then the data have had the strain BLUP
 #' effect subtracted.
 #' @param return.means DEFAULT: TRUE. If TRUE, strain means are returned. If FALSE, the full data
@@ -169,19 +171,26 @@ sim.CC.data <- function(genomecache,
                         strain.effect.size,
                         impute=TRUE,
                         scale.by.varp=FALSE,
-                        return.value=c("raw", "fixef.resid", "ranef.resid"),
+                        return.value=c("rescale", "raw", "fixef.resid", "ranef.resid"),
                         return.means=TRUE){
   
   h <- miqtl::DiploprobReader$new(genomecache)
   return.value=return.value[1]
   
+  original.effects <- list(qtl.effect.size=qtl.effect.size,
+                           strain.effect.size=strain.effect.size)
+  if (return.value == "rescale") {
+    qtl.effect.size <- qtl.effect.size/(1 - strain.effect.size)
+    strain.effect.size <- 0
+  }
+  
   ## Sampling lines
-  if(is.null(CC.lines)){
+  if (is.null(CC.lines)) {
     CC.lines <- sapply(1:ifelse(vary.lines, num.sim, 1), function(i) sample(x=h$getSubjects(), size=num.lines, replace=FALSE))
-    if(vary.lines){
+    if (vary.lines) {
       cc.index <- 1:num.sim
     }
-    else{
+    else {
       cc.index <- rep(1, num.sim)
     }
   }
@@ -259,14 +268,16 @@ sim.CC.data <- function(genomecache,
               properties=list(num.alleles=num.alleles,
                               num.replicates=num.replicates,
                               num.founders=num.founders,
-                              qtl.effect.size=qtl.effect.size, 
-                              strain.effect.size=strain.effect.size,
+                              qtl.effect.size=original.effects$qtl.effect.size, 
+                              strain.effect.size=original.effects$strain.effect.size,
                               num.lines=num.lines,
                               impute=impute,
                               scale.by.varp=scale.by.varp,
                               M.ID=M.ID,
                               vary.lines=vary.lines,
-                              vary.locus=vary.locus)))
+                              vary.locus=vary.locus,
+                              return.value=return.value,
+                              return.means=return.means)))
 }
 
 simulate.CC.qtl <- function(CC.lines, 
@@ -356,7 +367,9 @@ simulate.CC.qtl <- function(CC.lines,
                               num.alleles=num.alleles,
                               num.replicates=num.replicates,
                               num.lines=length(CC.lines),
-                              impute=impute)))
+                              impute=impute,
+                              return.value=return.value,
+                              return.means=return.means)))
 }
 
 take.fixef.residuals <- function(data, locus.matrix, strain.matrix){
@@ -474,8 +487,10 @@ single.sim.plot <- function(sim.scans,
     locus <- sim.scans$locus
   }
   
-  this.title <- c(paste0("QTL Effect=",  sim.scans$properties$qtl.effect.size*100, "%"), 
-                  paste0("Strain Effect=", sim.scans$properties$strain.effect.size*100, "%"),
+  this.title <- c(paste(sim.scans$properties$return.value, ifelse(sim.scans$properties$return.means, "means:", "replicates:"),
+                        paste(paste0("QTL=",  sim.scans$properties$qtl.effect.size*100, "%"),
+                              paste0("Strain=", sim.scans$properties$strain.effect.size*100, "%"),
+                              sep=",")),
                   paste(ifelse(sim.scans$properties$impute, "Impute", "ROP"), "sim,",
                         sim.scans$properties$num.alleles, "functional alleles,",
                         sim.scans$properties$num.lines, "lines,",
