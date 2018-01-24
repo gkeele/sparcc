@@ -141,14 +141,16 @@ run.sim.scans <- function(sim.data,
 #' @param strain.effect.size The size of the simulated strain effect, which represents something akin to a polygenic 
 #' effect. Other variants specific to CC lines will result in overall strain-specific effects. The scale of the input 
 #' is in proportion of the phenotypic variance due to the strain, thus should be greater than or equal to zero, and less than one.
+#' @param strain.reduction.fraction DEFAULT: 1. This argument allows the strain effect to be reduced by a specified fraction.
+#' The DEFAULT of 1 reflects the strain effect being perfectly controlled, and thus removed. The parameterization is such that
+#' strain.effect.size = strain.effect.size * (1 - strain.reduction.fraction). Setting strain.reduction.fraction to 0 reflects
+#' strain not being modeled at all, and simply being absorbed into the residual.
 #' @param impute DEFAULT: TRUE. If TRUE, the QTL portion of the design matrix in the simulation is a realized sampling
 #' of haplotypes from the probabilities. If FALSE, the simulations are based on the probabilities, which is flawed in
 #' terms of biological reality.
 #' @param scale.by.varp DEFAULT: TRUE. If TRUE, the effects are scaled by var(X %*% QTL effect) so that the effect matches
 #' the stated proportion of variance in the observed population.
-#' @param return.value DEFAULT: "rescale". If "rescale", the strong assumptions is made that in the actual mapping experiment,
-#' the strain effect can be perfectly accounted for and controlled, and the QTL effect and noise effect are re-scaled accordingly.
-#' If "raw", residuals are not taken. If "fixef.resid", then the data
+#' @param return.value DEFAULT: "raw". If "raw", residuals are not taken. If "fixef.resid", then the data
 #' are residuals after regressing phenotype on strain. If "ranef.resid", then the data have had the strain BLUP
 #' effect subtracted.
 #' @param return.means DEFAULT: TRUE. If TRUE, strain means are returned. If FALSE, the full data
@@ -169,9 +171,10 @@ sim.CC.data <- function(genomecache,
                         qtl.effect.size,
                         beta=NULL,
                         strain.effect.size,
+                        strain.reduction.fraction=1,
                         impute=TRUE,
                         scale.by.varp=FALSE,
-                        return.value=c("rescale", "raw", "fixef.resid", "ranef.resid"),
+                        return.value=c("raw", "fixef.resid", "ranef.resid"),
                         return.means=TRUE){
   
   h <- miqtl::DiploprobReader$new(genomecache)
@@ -179,11 +182,9 @@ sim.CC.data <- function(genomecache,
   
   original.effects <- list(qtl.effect.size=qtl.effect.size,
                            strain.effect.size=strain.effect.size)
-  if (return.value == "rescale") {
-    qtl.effect.size <- qtl.effect.size/(1 - strain.effect.size)
-    strain.effect.size <- 0
-  }
-  
+  qtl.effect.size <- qtl.effect.size/(1 - strain.effect.size*strain.reduction.fraction)
+  strain.effect.size <- strain.effect.size*(1 - strain.reduction.fraction)
+
   ## Sampling lines
   if (is.null(CC.lines)) {
     CC.lines <- sapply(1:ifelse(vary.lines, num.sim, 1), function(i) sample(x=h$getSubjects(), size=num.lines, replace=FALSE))
@@ -270,6 +271,7 @@ sim.CC.data <- function(genomecache,
                               num.founders=num.founders,
                               qtl.effect.size=original.effects$qtl.effect.size, 
                               strain.effect.size=original.effects$strain.effect.size,
+                              strain.reduction.fraction=strain.reduction.fraction,
                               num.lines=num.lines,
                               impute=impute,
                               scale.by.varp=scale.by.varp,
@@ -487,10 +489,15 @@ single.sim.plot <- function(sim.scans,
     locus <- sim.scans$locus
   }
   
-  this.title <- c(paste(sim.scans$properties$return.value, ifelse(sim.scans$properties$return.means, "means:", "replicates:"),
+  outcome.type <- NULL
+  if (sim.scans$properties$return.value != "raw") { outcome.type <- sim.scans$properties$return.value }
+  
+  this.title <- c(paste(outcome.type, 
+                        ifelse(sim.scans$properties$return.means, "means:", "replicates:"),
                         paste(paste0("QTL=",  sim.scans$properties$qtl.effect.size*100, "%"),
                               paste0("Strain=", sim.scans$properties$strain.effect.size*100, "%"),
-                              sep=",")),
+                              paste0("Strain reduction=", sim.scans$properties$strain.reduction.fraction),
+                              sep=", ")),
                   paste(ifelse(sim.scans$properties$impute, "Impute", "ROP"), "sim,",
                         sim.scans$properties$num.alleles, "functional alleles,",
                         sim.scans$properties$num.lines, "lines,",

@@ -7,9 +7,10 @@
 sim.CC.data(genomecache, CC.lines = NULL, num.lines = NULL,
   vary.lines = TRUE, locus = NULL, vary.locus = TRUE, num.replicates,
   num.sim, M.ID = NULL, num.alleles = 8, num.founders = 8,
-  qtl.effect.size, beta = NULL, strain.effect.size, impute = TRUE,
-  scale.by.varp = FALSE, return.value = c("rescale", "raw", "fixef.resid",
-  "ranef.resid"), return.means = TRUE)
+  qtl.effect.size, beta = NULL, strain.effect.size,
+  strain.reduction.fraction = 1, impute = TRUE, scale.by.varp = FALSE,
+  return.value = c("raw", "fixef.resid", "ranef.resid"),
+  return.means = TRUE)
 }
 \arguments{
 \item{genomecache}{The path to the genome cache directory. The genome cache is a particularly structured
@@ -61,6 +62,11 @@ the length of the number of alleles. It will be scaled based on qtl.effect.size.
 effect. Other variants specific to CC lines will result in overall strain-specific effects. The scale of the input 
 is in proportion of the phenotypic variance due to the strain, thus should be greater than or equal to zero, and less than one.}
 
+\item{strain.reduction.fraction}{DEFAULT: 1. This argument allows the strain effect to be reduced by a specified fraction.
+The DEFAULT of 1 reflects the strain effect being perfectly controlled, and thus removed. The parameterization is such that
+strain.effect.size = strain.effect.size * (1 - strain.reduction.fraction). Setting strain.reduction.fraction to 0 reflects
+strain not being modeled at all, and simply being absorbed into the residual.}
+
 \item{impute}{DEFAULT: TRUE. If TRUE, the QTL portion of the design matrix in the simulation is a realized sampling
 of haplotypes from the probabilities. If FALSE, the simulations are based on the probabilities, which is flawed in
 terms of biological reality.}
@@ -68,9 +74,7 @@ terms of biological reality.}
 \item{scale.by.varp}{DEFAULT: TRUE. If TRUE, the effects are scaled by var(X %*% QTL effect) so that the effect matches
 the stated proportion of variance in the observed population.}
 
-\item{return.value}{DEFAULT: "rescale". If "rescale", the strong assumptions is made that in the actual mapping experiment,
-the strain effect can be perfectly accounted for and controlled, and the QTL effect and noise effect are re-scaled accordingly.
-If "raw", residuals are not taken. If "fixef.resid", then the data
+\item{return.value}{DEFAULT: "raw". If "raw", residuals are not taken. If "fixef.resid", then the data
 are residuals after regressing phenotype on strain. If "ranef.resid", then the data have had the strain BLUP
 effect subtracted.}
 
