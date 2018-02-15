@@ -6,11 +6,11 @@
 \usage{
 sim.CC.data(genomecache, CC.lines = NULL, num.lines = NULL,
   vary.lines = TRUE, locus = NULL, vary.locus = TRUE, num.replicates,
-  num.sim, M.ID = NULL, num.alleles = 8, num.founders = 8,
-  qtl.effect.size, beta = NULL, strain.effect.size,
-  strain.reduction.fraction = NULL, impute = TRUE, scale.by.varp = FALSE,
-  return.value = c("raw", "fixef.resid", "ranef.resid"),
-  return.means = TRUE)
+  num.sim, M.ID = NULL, sample.sadp.method = c("uniform", "crp"),
+  num.alleles = 8, num.founders = 8, qtl.effect.size, beta = NULL,
+  strain.effect.size, strain.reduction.fraction = NULL, impute = TRUE,
+  scale.by.varp = FALSE, return.value = c("raw", "fixef.resid",
+  "ranef.resid"), return.means = TRUE)
 }
 \arguments{
 \item{genomecache}{The path to the genome cache directory. The genome cache is a particularly structured
@@ -45,6 +45,10 @@ alleles. Mapping will be based on haplotype association, but potentially there a
 founders alleles at the QTL. M.ID is a string that codifies this mapping. One potential balanced two allele
 M.ID would be "c(0,0,0,0,1,1,1,1)". With 8 functional alleles, on per founder, the only M.ID is "c(0,1,2,3,4,5,6,7)".
 If M.ID is NULL, M.ID will be sampled.}
+
+\item{sample.sadp.method}{DEFAULT: "uniform". The procedure used for sampling the strain allele distribution pattern. If
+every strain has its own allele, this option does not matter. Alternatively, a Chinese restaurant process ("crp") can be used,
+which is possibly more biologically accurate, and will favor strain allele distribution patterns that are less balanced (1 vs 7).}
 
 \item{num.alleles}{DEFAULT: 8. The number of functional alleles. Must be less than or equal to the number of 
 founders.}

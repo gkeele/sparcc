@@ -130,6 +130,9 @@ run.sim.scans <- function(sim.data,
 #' founders alleles at the QTL. M.ID is a string that codifies this mapping. One potential balanced two allele
 #' M.ID would be "c(0,0,0,0,1,1,1,1)". With 8 functional alleles, on per founder, the only M.ID is "c(0,1,2,3,4,5,6,7)".
 #' If M.ID is NULL, M.ID will be sampled.
+#' @param sample.sadp.method DEFAULT: "uniform". The procedure used for sampling the strain allele distribution pattern. If
+#' every strain has its own allele, this option does not matter. Alternatively, a Chinese restaurant process ("crp") can be used,
+#' which is possibly more biologically accurate, and will favor strain allele distribution patterns that are less balanced (1 vs 7).
 #' @param num.alleles DEFAULT: 8. The number of functional alleles. Must be less than or equal to the number of 
 #' founders.
 #' @param num.founders DEFAULT: 8. The number of founders, which must correspond to the genome cache. The CC has
@@ -168,6 +171,7 @@ sim.CC.data <- function(genomecache,
                         num.replicates, 
                         num.sim,
                         M.ID=NULL,
+                        sample.sadp.method=c("uniform", "crp"),
                         num.alleles=8, 
                         num.founders=8,
                         qtl.effect.size,
@@ -180,7 +184,8 @@ sim.CC.data <- function(genomecache,
                         return.means=TRUE){
   
   h <- miqtl::DiploprobReader$new(genomecache)
-  return.value=return.value[1]
+  return.value <- return.value[1]
+  sample.sdp.method <- sample.sdp.method[1]
   
   original.effects <- list(qtl.effect.size=qtl.effect.size,
                            strain.effect.size=strain.effect.size)
@@ -249,6 +254,7 @@ sim.CC.data <- function(genomecache,
     this.sim <- simulate.CC.qtl(CC.lines=CC.lines[,cc.index[i]], 
                                 num.replicates=num.replicates,
                                 M=M,
+                                sample.sadp.method=sample.sadp.method,
                                 num.alleles=num.alleles, 
                                 num.founders=num.founders,
                                 qtl.effect.size=qtl.effect.size, 
@@ -274,6 +280,7 @@ sim.CC.data <- function(genomecache,
                              cM=h$getLocusStart(locus, scale="cM")),
               genomecache=genomecache,
               properties=list(num.alleles=num.alleles,
+                              sample.sadp.method=sample.sadp.method,
                               num.replicates=num.replicates,
                               num.founders=num.founders,
                               qtl.effect.size=original.effects$qtl.effect.size, 
@@ -292,6 +299,7 @@ sim.CC.data <- function(genomecache,
 simulate.CC.qtl <- function(CC.lines, 
                             num.replicates,
                             M=NULL,
+                            sample.sadp.method=c("uniform", "crp"),
                             qtl.effect.size, 
                             beta=NULL,
                             strain.effect.size,
@@ -306,6 +314,7 @@ simulate.CC.qtl <- function(CC.lines,
                             ...){
   
   return.value <- return.value[1]
+  sample.sadp.method <- sample.sadp.method[1]
   this.locus.matrix <- locus.matrix[CC.lines,]
   this.locus.matrix <- this.locus.matrix[rep(1:nrow(this.locus.matrix), each=num.replicates),]
   
@@ -316,6 +325,7 @@ simulate.CC.qtl <- function(CC.lines,
     QTL.effect <- simulate.QTL.model.and.effects(num.alleles=num.alleles, 
                                                  num.founders=num.founders, 
                                                  M=M,
+                                                 sample.sadp.method=sample.sadp.method,
                                                  effect.var=qtl.effect.size, 
                                                  beta=beta,
                                                  ...)
@@ -374,6 +384,7 @@ simulate.CC.qtl <- function(CC.lines,
               properties=list(qtl.effect.size=qtl.effect.size,
                               strain.effect.size=strain.effect.size,
                               num.alleles=num.alleles,
+                              sample.sadp.method=sample.sadp.method,
                               num.replicates=num.replicates,
                               num.lines=length(CC.lines),
                               impute=impute,
@@ -431,11 +442,12 @@ calc.scaled.residual <- function(qtl.effect.size,
 simulate.QTL.model.and.effects <- function(num.alleles=8, 
                                            num.founders=8, 
                                            M=NULL,
-                                           model.method="crp", 
+                                           sample.sadp.method=c("uniform", "crp"), 
                                            effect.var, 
                                            beta=NULL,
                                            ...){
   
+  model.method <- model.method[1]
   if(is.null(M)){
     M <- matrix(0, num.founders, num.alleles)
     M[cbind(sample(1:num.founders, num.alleles), 1:num.alleles)] <- 1
