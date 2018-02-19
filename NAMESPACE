@@ -2,6 +2,7 @@
 
 export(extract.compact.qr)
 export(generate.permutation.index.matrix)
+export(get.thresholds)
 export(pull.power)
 export(pull.qr.from.compact)
 export(run.permutation.threshold.scans)

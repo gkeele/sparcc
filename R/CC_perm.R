@@ -1,3 +1,27 @@
+
+#' Extract GEV thresholds from permutation scans from SPARCC simulations
+#' 
+#' This function takes the output from run.permutation.threshold.scans() and calculates GEV thresholds per simulated phenotype.
+#' 
+#' @param threshold.scans The output object from run.permutation.threshold.scans(). Is simply a matrix of minimum p-values per
+#' simulatione phenotype per permutation.
+#' @param percentile DEFAULT: 0.95. Specifies that 1 - alpha level for significance.
+#' @export
+#' @examples get.thresholds()
+get.thresholds <- function(threshold.scans, 
+                           percentile=0.95){
+  
+  extreme.values <- -log10(threshold.scans)
+
+  thresh.vec <- rep(NA, nrow(threshold.scans))
+  
+  for (i in 1:nrow(threshold.scans)) {
+    evd.pars <- as.numeric(evir::gev(extreme.values[i,])$par.est)
+    thresh.vec[i] <- evir::qgev(p=ifelse(type == "min", percentile, 1 - percentile), xi=evd.pars[1], sigma=evd.pars[2], mu=evd.pars[3])
+  }
+  return(thresh)
+}
+
 #' Generates a matrix of permutation indeces. Can be used across simulations with the same number of CC lines
 #'
 #' This function takes the output from sim.CC.data() to produce a matrix of permutation indeces, allowing
@@ -81,19 +105,6 @@ run.permutation.threshold.scans <- function(perm.index.matrix,
     loci.chr <- loci.chr[loci %in% just.these.loci]
   }
   
-  # full.p <- these.pos <- NULL
-  # if (keep.full.scans) {
-  #   full.p <- matrix(NA, nrow=length(scan.index), ncol=length(loci))
-  #   colnames(full.p) <- loci
-  #   if(sim.CC.scans$properties$vary.lines){
-  #     these.pos <- list(Mb=all.sim.qr[[1]]$pos$Mb[loci],
-  #                       cM=all.sim.qr[[1]]$pos$cM[loci])
-  #   }
-  #   else{
-  #     these.pos <- list(Mb=all.sim.qr$pos$Mb[loci],
-  #                       cM=all.sim.qr$pos$cM[loci])
-  #   }
-  # }
   min.p <- matrix(NA, nrow=length(phenotype.index), ncol=length(scan.index))
   
   for (i in 1:length(phenotype.index)) {
@@ -119,22 +130,13 @@ run.permutation.threshold.scans <- function(perm.index.matrix,
                                   phenotype="perm_y", chr=chr,
                                   return.allele.effects=FALSE, use.progress.bar=use.progress.bar,
                                   ...)
-      # if(keep.full.scans){
-      #   full.p[i,] <- this.scan$p.value
-      # }
+
       min.p[i,j] <-  min(this.scan$p.value)
       if(print.scans.progress){
-        cat("\n", "Threshold scan: phenotype index=", phenotype.index[i], "----",
-            "perm index=", scan.index[j], "---- out of", length(scan.index), "permutations ---- out of", length(phenotype.index), "phenotypes\n")
+        cat("\n", "Threshold scan: phenotype index =", phenotype.index[i], "----",
+            "perm index =", scan.index[j], "---- out of", length(scan.index), "permutations ---- out of", length(phenotype.index), "phenotypes\n")
       }
     }
   }
-  
-  return(list(full.results=NULL,
-              # full.results=list(LOD=NULL,
-              #                   p.value=full.p,
-              #                   chr=loci.chr, 
-              #                   pos=these.pos), 
-              max.statistics=list(LOD=NULL,
-                                  p.value=min.p)))
+  return(min.p)
 }
