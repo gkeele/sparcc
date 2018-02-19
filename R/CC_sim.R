@@ -447,18 +447,18 @@ simulate.QTL.model.and.effects <- function(num.alleles=8,
                                            beta=NULL,
                                            ...){
   
-  model.method <- model.method[1]
+  sample.sadp.method <- sample.sadp.method[1]
   if(is.null(M)){
     M <- matrix(0, num.founders, num.alleles)
     M[cbind(sample(1:num.founders, num.alleles), 1:num.alleles)] <- 1
     
-    if(model.method == "crp"){
+    if(sample.sadp.method == "uniform"){
+      M[which(rowSums(M)==0),] <- t(rmultinom(num.founders - num.alleles, 1, rep(1/num.alleles, num.alleles)))
+    }
+    else if(sample.sadp.method == "crp"){
       for(i in which(rowSums(M)==0)){
         M[i,] <- rmultinom(1, 1, colSums(M)/sum(M))
       }
-    }
-    else if(model.method == "uniform"){
-      M[which(rowSums(M)==0),] <- t(rmultinom(num.founders - num.alleles, 1, rep(1/num.alleles, num.alleles)))
     }
   }
   
