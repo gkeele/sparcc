@@ -125,7 +125,7 @@ run.permutation.threshold.scans <- function(perm.index.matrix,
       min.p[i,j] <-  min(this.scan$p.value)
       if(print.scans.progress){
         cat("\n", "Threshold scan: phenotype index=", phenotype.index[i], "----",
-            "perm index=", scan.index[j], "---- out of", length(scan.index), "permutations ----", length(phenotype.index), "\n")
+            "perm index=", scan.index[j], "---- out of", length(scan.index), "permutations ---- out of", length(phenotype.index), "phenotypes\n")
       }
     }
   }
