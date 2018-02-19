@@ -17,9 +17,9 @@ get.thresholds <- function(threshold.scans,
   
   for (i in 1:nrow(threshold.scans)) {
     evd.pars <- as.numeric(evir::gev(extreme.values[i,])$par.est)
-    thresh.vec[i] <- evir::qgev(p=ifelse(type == "min", percentile, 1 - percentile), xi=evd.pars[1], sigma=evd.pars[2], mu=evd.pars[3])
+    thresh.vec[i] <- evir::qgev(p=percentile, xi=evd.pars[1], sigma=evd.pars[2], mu=evd.pars[3])
   }
-  return(thresh)
+  return(thresh.vec)
 }
 
 #' Generates a matrix of permutation indeces. Can be used across simulations with the same number of CC lines

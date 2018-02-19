@@ -532,15 +532,18 @@ single.sim.plot <- function(sim.scans,
                         sim.scans$properties$num.lines, "lines,",
                         sim.scans$properties$num.replicates, ifelse(sim.scans$properties$num.replicates == 1, "replicate", "replicates")))
   genome.plotter.whole(scan.list=list(dummy.scan), override.title=this.title, distinguish.chr.type="color",
-                       scale=scale, mark.locus=locus, hard.thresholds=thresh, ...)
+                       scale=scale, mark.locus=locus, hard.thresholds=thresh[phenotype.index], ...)
 }
 
 ## Very simply checks what proportion of simulations correctly called the QTL. Needs thresholds
 #' @export
-pull.power <- function(sim.scans, locus, thresholds){
-  p.values <- sim.scans$p.value[,colnames(sim.scans$p.value) == locus]
-  power <- mean(-log10(p.values) > thresholds)
-  return(power)
+pull.power <- function(sim.scans, thresh){
+  map <- rep(NA, nrow(sim.scans$p.value))
+  for (i in 1:nrow(sim.scans$p.value)) {
+    p.value <- sim.scans$p.value[i, colnames(sim.scans$p.value) == sim.scans$locus[i]]
+    map[i] <- -log10(p.value) > thresh[i]
+  }
+  return(mean(map))
 }
 
 ## Produce SDP mapping matrix from SDP string
