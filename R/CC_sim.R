@@ -185,7 +185,7 @@ sim.CC.data <- function(genomecache,
   
   h <- miqtl::DiploprobReader$new(genomecache)
   return.value <- return.value[1]
-  sample.sdp.method <- sample.sdp.method[1]
+  sample.sadp.method <- sample.sadp.method[1]
   
   original.effects <- list(qtl.effect.size=qtl.effect.size,
                            strain.effect.size=strain.effect.size)
