@@ -5,9 +5,9 @@
 \title{Runs permutation scans from a permutation index matrix, simulated CC data, and simulated CC scans.}
 \usage{
 run.permutation.threshold.scans(perm.index.matrix, sim.CC.scans, sim.CC.object,
-  phenotype.index, all.sim.qr = NULL, keep.full.scans = TRUE,
-  scan.index = NULL, chr = "all", just.these.loci = NULL,
-  use.progress.bar = FALSE, print.scans.progress = FALSE, ...)
+  phenotype.index = NULL, all.sim.qr = NULL, scan.index = NULL,
+  chr = "all", just.these.loci = NULL, use.progress.bar = FALSE,
+  print.scans.progress = FALSE, ...)
 }
 \arguments{
 \item{perm.index.matrix}{Permutation index matrix that is output from generate.permutation.index.matrix().}
@@ -21,9 +21,6 @@ and sim.CC.objects.}
 
 \item{all.sim.qr}{DEFAULT: NULL. Allows qr decompositions to only be saved once. If NULL, it expects that they are
 stored in sim.CC.scans$all.sim.qr, which can be specified in run.sim.scans().}
-
-\item{keep.full.scans}{DEFAULT: TRUE. If TRUE, the full scans for the permutations of a phenotype are kept. If FALSE,
-only the minimum p-values are kept, saving space.}
 
 \item{scan.index}{DEFAULT: NULL. If NULL, it performs scans for all permuted data sets based on permutation index.
 If given a vector of integers, representing the permutation index, it will only run scans for those permutations.}
