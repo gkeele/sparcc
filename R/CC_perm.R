@@ -1,14 +1,14 @@
 
 #' Extract GEV thresholds from permutation scans from SPARCC simulations
 #' 
-#' This function takes the output from run.permutation.threshold.scans() and calculates GEV thresholds per simulated phenotype.
+#' This function takes the output from run.perm.scans() and calculates GEV thresholds per simulated phenotype.
 #' 
-#' @param threshold.scans The output object from run.permutation.threshold.scans(). Is simply a matrix of minimum p-values per
+#' @param threshold.scans The output object from run.perm.scans(). Is simply a matrix of minimum p-values per
 #' simulatione phenotype per permutation.
 #' @param percentile DEFAULT: 0.95. Specifies that 1 - alpha level for significance.
 #' @export
 #' @examples get.thresholds()
-get.thresholds <- function(threshold.scans, 
+get.thresholds <- function(thresh.scans, 
                            percentile=0.95){
   
   extreme.values <- -log10(threshold.scans)
@@ -32,24 +32,24 @@ get.thresholds <- function(threshold.scans,
 #' @param seed DEFAULT: NULL. A seed is necessary to produce the same results over multiple runs and on different machines. If NULL
 #' seed can be set outside of function to allow for replicable results.
 #' @export
-#' @examples generate.permutation.index.matrix()
-generate.permutation.index.matrix <- function(num.lines, 
-                                              num.perm, 
-                                              seed=NULL){
+#' @examples generate.perm.matrix()
+generate.perm.matrix <- function(num.lines, 
+                                 num.perm, 
+                                 seed=NULL){
   if(!is.null(seed)){
     set.seed(seed)
   }
-  perm.index.matrix <- replicate(n=num.perm, sample(1:num.lines, replace=FALSE))
-  colnames(perm.index.matrix) <- paste0("perm.", 1:num.perm)
-  return(perm.index.matrix)
+  perm.matrix <- replicate(n=num.perm, sample(1:num.lines, replace=FALSE))
+  colnames(perm.matrix) <- paste0("perm.", 1:num.perm)
+  return(perm.matrix)
 }
 
 #' Runs permutation scans from a permutation index matrix, simulated CC data, and simulated CC scans.
 #'
-#' This function takes the outputs from generate.permutation.index.matrix(), sim.CC.data(), and run.sim.scans() to perform
+#' This function takes the outputs from generate.perm.matrix(), sim.CC.data(), and run.sim.scans() to perform
 #' permutation scans and determine a significance threshold. 
 #'
-#' @param perm.index.matrix Permutation index matrix that is output from generate.permutation.index.matrix().
+#' @param perm.matrix Permutation index matrix that is output from generate.perm.matrix().
 #' @param sim.CC.scans Genome scans from simulated CC data output from run.sim.scans().
 #' @param sim.CC.object Simulated CC data output from sim.CC.data().
 #' @param phenotype.index The phenotype index of simulated phenotype that correspond to those found in sim.CC.scans
@@ -65,20 +65,20 @@ generate.permutation.index.matrix <- function(num.lines,
 #' @param print.scans.progress DEFAULT: FALSE. Specifies whether to output a message that indicates the number of permutation
 #' scans completed. 
 #' @export
-#' @examples run.permutation.threshold.scans()
-run.permutation.threshold.scans <- function(perm.index.matrix, 
-                                            sim.CC.scans, 
-                                            sim.CC.object,
-                                            phenotype.index=NULL,
-                                            all.sim.qr=NULL,
-                                            scan.index=NULL,
-                                            chr="all", 
-                                            just.these.loci=NULL, 
-                                            use.progress.bar=FALSE,
-                                            print.scans.progress=FALSE,
-                                            ...){
+#' @examples run.perm.scans()
+run.perm.scans <- function(perm.matrix, 
+                           sim.CC.scans, 
+                           sim.CC.object,
+                           phenotype.index=NULL,
+                           all.sim.qr=NULL,
+                           scan.index=NULL,
+                           chr="all", 
+                           just.these.loci=NULL, 
+                           use.progress.bar=FALSE,
+                           print.scans.progress=FALSE,
+                           ...){
   
-  if (is.null(scan.index)) { scan.index <- 1:ncol(perm.index.matrix) }
+  if (is.null(scan.index)) { scan.index <- 1:ncol(perm.matrix) }
   if (is.null(phenotype.index)) { phenotype.index <- 1:sum(grepl(colnames(x=sim.CC.object$data), pattern="sim.y")) }
   
   is.full <- ifelse(is.null(all.sim.qr), TRUE, FALSE)
@@ -123,7 +123,7 @@ run.permutation.threshold.scans <- function(perm.index.matrix,
     }
     for(j in 1:length(scan.index)){
       perm.data <- data
-      perm.data[,1] <- data[perm.index.matrix[,scan.index[j]], 1]
+      perm.data[,1] <- data[perm.matrix[,scan.index[j]], 1]
       names(perm.data) <- c("perm_y", "SUBJECT.NAME")
       
       this.scan <- miqtl::scan.qr(qr.object=this.qr, data=perm.data, 

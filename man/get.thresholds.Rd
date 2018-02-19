@@ -4,16 +4,16 @@
 \alias{get.thresholds}
 \title{Extract GEV thresholds from permutation scans from SPARCC simulations}
 \usage{
-get.thresholds(threshold.scans, percentile = 0.95)
+get.thresholds(thresh.scans, percentile = 0.95)
 }
 \arguments{
-\item{threshold.scans}{The output object from run.permutation.threshold.scans(). Is simply a matrix of minimum p-values per
-simulatione phenotype per permutation.}
-
 \item{percentile}{DEFAULT: 0.95. Specifies that 1 - alpha level for significance.}
+
+\item{threshold.scans}{The output object from run.perm.scans(). Is simply a matrix of minimum p-values per
+simulatione phenotype per permutation.}
 }
 \description{
-This function takes the output from run.permutation.threshold.scans() and calculates GEV thresholds per simulated phenotype.
+This function takes the output from run.perm.scans() and calculates GEV thresholds per simulated phenotype.
 }
 \examples{
 get.thresholds()
