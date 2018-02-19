@@ -62,10 +62,10 @@ run.sim.scans <- function(sim.data,
     this.id <- "SUBJECT.NAME.1"
   }
   compute.qr.boolean <- is.null(all.sim.qr)
-  if(return.all.sim.qr & is.null(all.sim.qr)){ all.sim.qr <- list() }
-  for(i in 1:length(scan.index)){
-    if(sim.data$properties$vary.lines){
-      if(compute.qr.boolean){
+  if (return.all.sim.qr & is.null(all.sim.qr)){ all.sim.qr <- list() }
+  for (i in 1:length(scan.index)) {
+    if (sim.data$properties$vary.lines) {
+      if (compute.qr.boolean) {
         this.qr <- miqtl::extract.qr(genomecache=sim.data$genomecache, model="additive",
                                      formula=~1, data=sim.data$data,
                                      id=paste0("SUBJECT.NAME.", i),
@@ -83,8 +83,8 @@ run.sim.scans <- function(sim.data,
                                 return.allele.effects=FALSE, use.progress.bar=use.progress.bar,
                                 ...)
     full.p[i,] <- this.scan$p.value
-    if(return.all.sim.qr & sim.data$properties$vary.lines){ all.sim.qr[[i]] <- this.qr }
-    else if (return.all.sim.qr & !sim.data$properties$vary.lines) <- all.sim.qr <- this.qr
+    if (return.all.sim.qr & sim.data$properties$vary.lines) { all.sim.qr[[i]] <- this.qr }
+    else if (return.all.sim.qr & !sim.data$properties$vary.lines) { all.sim.qr <- this.qr }
     if(print.scans.progress){
       cat("\n", "Simulation scan: index", scan.index[i], "complete ---------- final index of this run:", scan.index[length(scan.index)], "\n")
     }
