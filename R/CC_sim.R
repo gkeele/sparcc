@@ -84,6 +84,7 @@ run.sim.scans <- function(sim.data,
                                 ...)
     full.p[i,] <- this.scan$p.value
     if(return.all.sim.qr & sim.data$properties$vary.lines){ all.sim.qr[[i]] <- this.qr }
+    else if (return.all.sim.qr & !sim.data$properties$vary.lines) <- all.sim.qr <- this.qr
     if(print.scans.progress){
       cat("\n", "Simulation scan: index", scan.index[i], "complete ---------- final index of this run:", scan.index[length(scan.index)], "\n")
     }
