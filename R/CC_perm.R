@@ -32,8 +32,6 @@ generate.permutation.index.matrix <- function(num.lines,
 #' and sim.CC.objects.
 #' @param all.sim.qr DEFAULT: NULL. Allows qr decompositions to only be saved once. If NULL, it expects that they are
 #' stored in sim.CC.scans$all.sim.qr, which can be specified in run.sim.scans().
-#' @param keep.full.scans DEFAULT: TRUE. If TRUE, the full scans for the permutations of a phenotype are kept. If FALSE,
-#' only the minimum p-values are kept, saving space.
 #' @param scan.index DEFAULT: NULL. If NULL, it performs scans for all permuted data sets based on permutation index.
 #' If given a vector of integers, representing the permutation index, it will only run scans for those permutations.
 #' @param chr DEFAULT: "all". Specifies which chromosomes to scan.
@@ -47,9 +45,8 @@ generate.permutation.index.matrix <- function(num.lines,
 run.permutation.threshold.scans <- function(perm.index.matrix, 
                                             sim.CC.scans, 
                                             sim.CC.object,
-                                            phenotype.index,
+                                            phenotype.index=NULL,
                                             all.sim.qr=NULL,
-                                            keep.full.scans=TRUE, 
                                             scan.index=NULL,
                                             chr="all", 
                                             just.these.loci=NULL, 
@@ -57,81 +54,87 @@ run.permutation.threshold.scans <- function(perm.index.matrix,
                                             print.scans.progress=FALSE,
                                             ...){
   
-  if(is.null(scan.index)){ scan.index <- 1:ncol(perm.index.matrix) }
+  if (is.null(scan.index)) { scan.index <- 1:ncol(perm.index.matrix) }
+  if (is.null(phenotype.index)) { phenotype.index <- 1:sum(grepl(colnames(x=sim.CC.object$data), pattern="sim.y")) }
   
   is.full <- ifelse(is.null(all.sim.qr), TRUE, FALSE)
-  if(is.null(all.sim.qr)){
+  if (is.null(all.sim.qr)) {
     all.sim.qr <- sim.CC.scans$all.sim.qr
   }
 
-  if(sim.CC.scans$properties$vary.lines){
+  if (sim.CC.scans$properties$vary.lines) {
     loci <- names(all.sim.qr[[1]]$qr.list)
     rh.formula <- all.sim.qr[[1]]$formula
     loci.chr <- all.sim.qr[[1]]$chr
   }
-  else{
+  else {
     loci <- names(all.sim.qr$qr.list)
     rh.formula <- all.sim.qr$formula
     loci.chr <- all.sim.qr$chr
   }
   
-  if(chr[1] != "all"){
+  if (chr[1] != "all") {
     loci <- loci[loci.chr %in% chr]
   }
-  if(!is.null(just.these.loci)){
+  if (!is.null(just.these.loci)) {
     loci <- loci[loci %in% just.these.loci]
     loci.chr <- loci.chr[loci %in% just.these.loci]
   }
-  data <- sim.CC.object$data[,c(paste0("sim.y.", phenotype.index), 
-                                paste0("SUBJECT.NAME.", ifelse(sim.CC.scans$properties$vary.lines, phenotype.index, 1)))]
   
-  full.p <- these.pos <- NULL
-  if(keep.full.scans){
-    full.p <- matrix(NA, nrow=length(scan.index), ncol=length(loci))
-    colnames(full.p) <- loci
+  # full.p <- these.pos <- NULL
+  # if (keep.full.scans) {
+  #   full.p <- matrix(NA, nrow=length(scan.index), ncol=length(loci))
+  #   colnames(full.p) <- loci
+  #   if(sim.CC.scans$properties$vary.lines){
+  #     these.pos <- list(Mb=all.sim.qr[[1]]$pos$Mb[loci],
+  #                       cM=all.sim.qr[[1]]$pos$cM[loci])
+  #   }
+  #   else{
+  #     these.pos <- list(Mb=all.sim.qr$pos$Mb[loci],
+  #                       cM=all.sim.qr$pos$cM[loci])
+  #   }
+  # }
+  min.p <- matrix(NA, nrow=length(phenotype.index), ncol=length(scan.index))
+  
+  for (i in 1:length(phenotype.index)) {
+    data <- sim.CC.object$data[,c(paste0("sim.y.", phenotype.index[i]), 
+                                  paste0("SUBJECT.NAME.", ifelse(sim.CC.scans$properties$vary.lines, phenotype.index[i], 1)))]
     if(sim.CC.scans$properties$vary.lines){
-      these.pos <- list(Mb=all.sim.qr[[1]]$pos$Mb[loci],
-                        cM=all.sim.qr[[1]]$pos$cM[loci])
-    }
-    else{
-      these.pos <- list(Mb=all.sim.qr$pos$Mb[loci],
-                        cM=all.sim.qr$pos$cM[loci])
-    }
-  }
-  min.p <- rep(NA, length(scan.index))
-  
-  if(sim.CC.scans$properties$vary.lines){
-    if(is.full){
-      this.qr <- all.sim.qr[[phenotype.index]]
+      if(is.full){
+        this.qr <- all.sim.qr[[phenotype.index]]
+      }
+      else{
+        this.qr <- all.sim.qr
+      }
     }
     else{
       this.qr <- all.sim.qr
     }
-  }
-  else{
-    this.qr <- all.sim.qr
-  }
-  for(i in 1:length(scan.index)){
-    perm.data <- data
-    perm.data[,1] <- data[perm.index.matrix[,scan.index[i]], 1]
-    names(perm.data) <- c("perm_y", "SUBJECT.NAME")
-    
-    this.scan <- miqtl::scan.qr(qr.object=this.qr, data=perm.data, 
-                                phenotype="perm_y", chr=chr,
-                                return.allele.effects=FALSE, use.progress.bar=use.progress.bar,
-                                ...)
-    if(keep.full.scans){
-      full.p[i,] <- this.scan$p.value
-    }
-    min.p[i] <-  min(this.scan$p.value)
-    if(print.scans.progress){
-      cat("\n", "Threshold scan: index", scan.index[i], "complete ---------- final index of this run:", scan.index[length(scan.index)], "\n")
+    for(j in 1:length(scan.index)){
+      perm.data <- data
+      perm.data[,1] <- data[perm.index.matrix[,scan.index[j]], 1]
+      names(perm.data) <- c("perm_y", "SUBJECT.NAME")
+      
+      this.scan <- miqtl::scan.qr(qr.object=this.qr, data=perm.data, 
+                                  phenotype="perm_y", chr=chr,
+                                  return.allele.effects=FALSE, use.progress.bar=use.progress.bar,
+                                  ...)
+      # if(keep.full.scans){
+      #   full.p[i,] <- this.scan$p.value
+      # }
+      min.p[i,j] <-  min(this.scan$p.value)
+      if(print.scans.progress){
+        cat("\n", "Threshold scan: phenotype index=", phenotype.index[i],
+            "perm index=", scan.index[j], "complete ---------- final index of this run:", scan.index[length(scan.index)], "\n")
+      }
     }
   }
-  return(list(full.results=list(LOD=NULL,
-                                p.value=full.p,
-                                chr=loci.chr, 
-                                pos=these.pos), 
+  
+  return(list(full.results=NULL,
+              # full.results=list(LOD=NULL,
+              #                   p.value=full.p,
+              #                   chr=loci.chr, 
+              #                   pos=these.pos), 
               max.statistics=list(LOD=NULL,
                                   p.value=min.p)))
 }
