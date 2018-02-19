@@ -3,7 +3,7 @@
 #' 
 #' This function takes the output from run.perm.scans() and calculates GEV thresholds per simulated phenotype.
 #' 
-#' @param threshold.scans The output object from run.perm.scans(). Is simply a matrix of minimum p-values per
+#' @param thresh.scans The output object from run.perm.scans(). Is simply a matrix of minimum p-values per
 #' simulatione phenotype per permutation.
 #' @param percentile DEFAULT: 0.95. Specifies that 1 - alpha level for significance.
 #' @export
@@ -11,11 +11,11 @@
 get.thresholds <- function(thresh.scans, 
                            percentile=0.95){
   
-  extreme.values <- -log10(threshold.scans)
+  extreme.values <- -log10(thresh.scans)
 
-  thresh.vec <- rep(NA, nrow(threshold.scans))
+  thresh.vec <- rep(NA, nrow(thresh.scans))
   
-  for (i in 1:nrow(threshold.scans)) {
+  for (i in 1:nrow(thresh.scans)) {
     evd.pars <- as.numeric(evir::gev(extreme.values[i,])$par.est)
     thresh.vec[i] <- evir::qgev(p=percentile, xi=evd.pars[1], sigma=evd.pars[2], mu=evd.pars[3])
   }
