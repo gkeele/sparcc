@@ -142,15 +142,9 @@ run.sim.scans <- function(sim.data,
 #' the phenotypic variance due to the QTL, thus should be greater than or equal to zero, and less than one.
 #' @param beta DEFAULT: NULL. Allows for the manual specification of QTL effect. Is expected to be a vector
 #' the length of the number of alleles. It will be scaled based on qtl.effect.size.
-#' @param strain.effect.size The size of the simulated strain effect, which represents something akin to a polygenic 
+#' @param strain.effect.size DEFAULT: 0. The size of the simulated strain effect, which represents something akin to a polygenic 
 #' effect. Other variants specific to CC lines will result in overall strain-specific effects. The scale of the input 
 #' is in proportion of the phenotypic variance due to the strain, thus should be greater than or equal to zero, and less than one.
-#' @param strain.reduction.fraction DEFAULT: NULL. This argument allows the strain effect to be reduced by a specified fraction.
-#' The DEFAULT of NULL for return.value="raw" and return.means=TRUE sets strain.reduction.fraction to (num.replicates - 1)/num.replicates, which
-#' corresponds to the expected reduction of the strain effect if we could estimate the BLUE of the QTL. A value of 1 reflects the strain effect being 
-#' perfectly controlled, and thus removed. The parameterization is such that strain.effect.size = strain.effect.size * (1 - strain.reduction.fraction). 
-#' Setting strain.reduction.fraction to 0 reflects strain not being modeled at all, and simply being absorbed into the residual. Argument is forced to NULL
-#' for residuals or return.means=FALSE.
 #' @param impute DEFAULT: TRUE. If TRUE, the QTL portion of the design matrix in the simulation is a realized sampling
 #' of haplotypes from the probabilities. If FALSE, the simulations are based on the probabilities, which is flawed in
 #' terms of biological reality.
@@ -177,8 +171,7 @@ sim.CC.data <- function(genomecache,
                         num.founders=8,
                         qtl.effect.size,
                         beta=NULL,
-                        strain.effect.size,
-                        strain.reduction.fraction=NULL,
+                        strain.effect.size=0,
                         impute=TRUE,
                         scale.by.varp=FALSE,
                         return.value=c("raw", "fixef.resid", "ranef.resid"),
@@ -191,13 +184,6 @@ sim.CC.data <- function(genomecache,
   original.effects <- list(qtl.effect.size=qtl.effect.size,
                            strain.effect.size=strain.effect.size)
   
-  if (return.value == "raw" & return.means) {
-    if (is.null(strain.reduction.fraction)) { strain.reduction.fraction <- (num.replicates - 1)/num.replicates }
-    qtl.effect.size <- qtl.effect.size/(1 - strain.effect.size*strain.reduction.fraction)
-    strain.effect.size <- strain.effect.size*(1 - strain.reduction.fraction)
-  }
-  else { strain.reduction.fraction <- NULL }
-
   ## Sampling lines
   if (is.null(CC.lines)) {
     CC.lines <- sapply(1:ifelse(vary.lines, num.sim, 1), function(i) sample(x=h$getSubjects(), size=num.lines, replace=FALSE))
@@ -286,7 +272,6 @@ sim.CC.data <- function(genomecache,
                               num.founders=num.founders,
                               qtl.effect.size=original.effects$qtl.effect.size, 
                               strain.effect.size=original.effects$strain.effect.size,
-                              strain.reduction.fraction=strain.reduction.fraction,
                               num.lines=num.lines,
                               impute=impute,
                               scale.by.varp=scale.by.varp,
