@@ -522,11 +522,13 @@ single.sim.plot <- function(sim.scans,
 
 ## Very simply checks what proportion of simulations correctly called the QTL. Needs thresholds
 #' @export
-pull.power <- function(sim.scans, thresh){
+pull.power <- function(sim.scans, thresh, window=5){
   map <- rep(NA, nrow(sim.scans$p.value))
+  total <- length(sim.scans$p.value)
   for (i in 1:nrow(sim.scans$p.value)) {
-    p.value <- sim.scans$p.value[i, colnames(sim.scans$p.value) == sim.scans$locus[i]]
-    map[i] <- -log10(p.value) > thresh[i]
+    this.index <- which(colnames(sim.scans$p.value) == sim.scans$locus[i])
+    p.value <- sim.scans$p.value[i, max(1, this.index-window):min(this.index+window, total)]
+    map[i] <- any(-log10(p.value) > thresh[i])
   }
   return(mean(map))
 }
