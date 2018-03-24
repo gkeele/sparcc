@@ -359,12 +359,9 @@ simulate.CC.qtl <- function(CC.lines,
                                          n=nrow(this.locus.matrix))
     sim.data[,i] <- QTL.predictor + strain.predictor + scaled.resid
     
-    observed.var <- var(locus.matrix %*% t(full.to.add.matrix) %*% QTL.effect$M %*% QTL.effect$beta)
-    observed.varp <- observed.var/(observed.var + var(strain.predictor) + 1 - qtl.effect.size - strain.effect.size)
-    
     var.table[i,] <- c(qtl.effect.size, 
                        var(2*QTL.effect$M %*% QTL.effect$beta),
-                       observed.varp)
+                       var(locus.matrix %*% t(full.to.add.matrix) %*% QTL.effect$M %*% QTL.effect$beta))
   }
   
   colnames(sim.data) <- paste0("sim.y.", 1:ncol(sim.data))
