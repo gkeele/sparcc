@@ -10,7 +10,7 @@ run.sim.scans(sim.data, scan.index = NULL, chr = "all",
   return.all.sim.qr = TRUE, ...)
 }
 \arguments{
-\item{sim.data}{Output simulated data from sim.CC.data()}
+\item{sim.data}{Output simulated data from sim.CC.data().}
 
 \item{scan.index}{DEFAULT: NULL. If NULL, it performs scans for all simulated data sets stored in sim.data.
 If given a vector of integers, representing the simulation index, it will only run scans for those phenotypes.}

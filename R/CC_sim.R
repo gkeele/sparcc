@@ -3,7 +3,7 @@
 #' This function takes the output from sim.CC.data() and performs the genome scans. Internally it runs
 #' the require QR decompositions, which it can save for later if specified.
 #'
-#' @param sim.data Output simulated data from sim.CC.data()
+#' @param sim.data Output simulated data from sim.CC.data().
 #' @param scan.index DEFAULT: NULL. If NULL, it performs scans for all simulated data sets stored in sim.data.
 #' If given a vector of integers, representing the simulation index, it will only run scans for those phenotypes.
 #' @param chr DEFAULT: "all". Specifies which chromosomes to scan.
@@ -542,8 +542,20 @@ single.sim.plot <- function(sim.scans,
                        scale=scale, mark.locus=locus, hard.thresholds=thresh[phenotype.index], ...)
 }
 
-## Very simply checks what proportion of simulations correctly called the QTL. Needs thresholds
+
+#' Calculate the QTL mapping power from SPARCC genome scans output from run.sim.scans()
+#'
+#' This function takes output genome scans from run.sim.scans() and calculates the power to map the simulated
+#' QTL. A window around the QTL can be specified to allow peaks not immediately at the simulated locus but likely
+#' tagging the QTL to also be included.
+#'
+#' @param sim.scans Output simulated genome scans from run.sim.scans().
+#' @param thresh A list of threshold, calculated from get.gev.thresh(), that correspond to the scans in sim.scans. 
+#' @param window.mb DEFAULT: 5. Loci upstream and downstream the specified window.mb in Mb will also be checked 
+#' for statistically significant signals. Sometimes the statistical score will not pass at the simulated QTL, but
+#' does at nearby loci.
 #' @export
+#' @examples pull.power()
 pull.power <- function(sim.scans, thresh, window.mb=5){
   map <- rep(NA, nrow(sim.scans$p.value))
   total <- length(sim.scans$p.value)
