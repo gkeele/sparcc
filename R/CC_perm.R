@@ -29,16 +29,10 @@ get.thresholds <- function(thresh.scans,
 #'
 #' @param sim.CC.object Simulated CC data output from sim.CC.data().
 #' @param num.perm The number of permutations.
-#' @param seed DEFAULT: NULL. A seed is necessary to produce the same results over multiple runs and on different machines. If NULL
-#' seed can be set outside of function to allow for replicable results.
 #' @export
 #' @examples generate.perm.matrix()
 generate.perm.matrix <- function(num.lines, 
-                                 num.perm, 
-                                 seed=NULL){
-  if(!is.null(seed)){
-    set.seed(seed)
-  }
+                                 num.perm){
   perm.matrix <- replicate(n=num.perm, sample(1:num.lines, replace=FALSE))
   colnames(perm.matrix) <- paste0("perm.", 1:num.perm)
   return(perm.matrix)
