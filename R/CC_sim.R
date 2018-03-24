@@ -235,6 +235,7 @@ sim.CC.data <- function(genomecache,
     M <- model.matrix.from.ID(M.ID)
     num.alleles <- length(unique(unlist(strsplit(x=M.ID, split=","))))
   }
+  var.table <- matrix(NA, nrow=num.sim, ncol=3)
   sim.matrix <- matrix(NA, nrow=num.ind, ncol=num.sim)
   id.matrix <- matrix(NA, nrow=num.ind, ncol=ifelse(vary.lines, num.sim, 1))
   for(i in 1:num.sim){
@@ -251,14 +252,18 @@ sim.CC.data <- function(genomecache,
                                 locus.matrix=h$getLocusMatrix(locus=locus[locus.index[i]], model="full"),
                                 return.value=return.value,
                                 return.means=return.means,
-                                num.sim=1)$data
+                                num.sim=1)
+    this.var.table <- this.sim$properties$var.table
+    this.sim <- this.sim$data
     sim.matrix[,i] <- this.sim[,1]
+    var.table[i,] <- this.var.table[1,]
     if(vary.lines | i == 1){
       id.matrix[,i] <- as.character(this.sim[,2])
     }
   }
   colnames(sim.matrix) <- paste0("sim.y.", 1:num.sim)
   colnames(id.matrix) <- paste0("SUBJECT.NAME.", 1:ncol(id.matrix))
+  colnames(var.table) <- colnames(this.var.table)
   
   outcome <- data.frame(sim.matrix, id.matrix)
   return(list(data=outcome,
@@ -279,7 +284,8 @@ sim.CC.data <- function(genomecache,
                               vary.lines=vary.lines,
                               vary.locus=vary.locus,
                               return.value=return.value,
-                              return.means=return.means)))
+                              return.means=return.means,
+                              var.table=var.table)))
 }
 
 simulate.CC.qtl <- function(CC.lines, 
@@ -345,11 +351,25 @@ simulate.CC.qtl <- function(CC.lines,
   }
   else{ strain.predictor <- rep(0, length(CC.lines)) }
   
-  sim.data <- sapply(1:num.sim, function(i) QTL.predictor + strain.predictor + calc.scaled.residual(qtl.effect.size=qtl.effect.size, 
-                                                                                                    strain.effect.size=strain.effect.size,
-                                                                                                    n=nrow(this.locus.matrix)))
+  var.table <- matrix(NA, nrow=num.sim, ncol=3)
+  sim.data <- matrix(NA, nrow=nrow(this.locus.matrix), ncol=num.sim)
+  for (i in 1:num.sim) {
+    scaled.resid <- calc.scaled.residual(qtl.effect.size=qtl.effect.size, 
+                                         strain.effect.size=strain.effect.size,
+                                         n=nrow(this.locus.matrix))
+    sim.data[,i] <- QTL.predictor + strain.predictor + scaled.resid
+    
+    observed.var <- var(locus.matrix %*% t(full.to.add.matrix) %*% QTL.effect$M %*% QTL.effect$beta)
+    observed.varp <- observed.var/(observed.var + var(strain.predictor) + 1 - qtl.effect.size - strain.effect.size)
+    
+    var.table[i,] <- c(qtl.effect.size, 
+                       var(2*QTL.effect$M %*% QTL.effect$beta),
+                       observed.varp)
+  }
+  
   colnames(sim.data) <- paste0("sim.y.", 1:ncol(sim.data))
   sim.data <- data.frame(sim.data, "SUBJECT.NAME"=rep(CC.lines, each=num.replicates))
+  colnames(var.table) <- c("balanced.ve", "unbalanced.ve", "varp.ve")
   
   ## Taking residuals
   if (return.value == "fixef.resid") {
@@ -375,7 +395,8 @@ simulate.CC.qtl <- function(CC.lines,
                               num.lines=length(CC.lines),
                               impute=impute,
                               return.value=return.value,
-                              return.means=return.means)))
+                              return.means=return.means,
+                              var.table=var.table)))
 }
 
 take.fixef.residuals <- function(data, locus.matrix, strain.matrix){
