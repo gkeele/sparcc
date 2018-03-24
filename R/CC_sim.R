@@ -467,7 +467,7 @@ simulate.QTL.model.and.effects <- function(num.alleles=8,
   }
   
   if(is.null(beta)){
-    beta <- sample(1:num.alleles)
+    beta <- rnorm(num.alleles)
   }
   beta <- as.vector(scale(beta))
   beta <- as.vector(0.5*beta*sqrt(effect.var)) 
