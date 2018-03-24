@@ -235,7 +235,7 @@ sim.CC.data <- function(genomecache,
     M <- model.matrix.from.ID(M.ID)
     num.alleles <- length(unique(unlist(strsplit(x=M.ID, split=","))))
   }
-  var.table <- matrix(NA, nrow=num.sim, ncol=3)
+  var.table <- matrix(NA, nrow=num.sim, ncol=4)
   sim.matrix <- matrix(NA, nrow=num.ind, ncol=num.sim)
   id.matrix <- matrix(NA, nrow=num.ind, ncol=ifelse(vary.lines, num.sim, 1))
   for(i in 1:num.sim){
@@ -307,12 +307,20 @@ simulate.CC.qtl <- function(CC.lines,
   
   return.value <- return.value[1]
   sample.as.method <- sample.as.method[1]
+
   this.locus.matrix <- locus.matrix[CC.lines,]
-  this.locus.matrix <- this.locus.matrix[rep(1:nrow(this.locus.matrix), each=num.replicates),]
+  ## Imputation for simulation
+  if(impute){
+    this.locus.matrix <- t(apply(this.locus.matrix, 1, function(x) rmultinom(1, 1, x)))
+    rownames(this.locus.matrix) <- CC.lines
+  }
+  D <- this.locus.matrix ## Saved for variance calculations
+  this.locus.matrix <- this.locus.matrix[rep(1:length(CC.lines), each=num.replicates),]
   
   full.to.add.matrix <- t(miqtl::straineff.mapping.matrix(M=num.founders))
   
   ## QTL
+  this.locus.matrix <- tcrossprod(this.locus.matrix, full.to.add.matrix)
   if(qtl.effect.size != 0){
     QTL.effect <- simulate.QTL.model.and.effects(num.alleles=num.alleles, 
                                                  num.founders=num.founders, 
@@ -321,10 +329,6 @@ simulate.CC.qtl <- function(CC.lines,
                                                  effect.var=qtl.effect.size, 
                                                  beta=beta,
                                                  ...)
-    if(impute){
-      this.locus.matrix <- t(apply(this.locus.matrix, 1, function(x) rmultinom(1, 1, x)))
-    }
-    this.locus.matrix <- tcrossprod(this.locus.matrix, full.to.add.matrix)
     QTL.predictor <- tcrossprod(tcrossprod(this.locus.matrix, t(QTL.effect$M)), matrix(QTL.effect$beta, nrow=1))
     if(scale.by.varp){
       QTL.predictor <- as.vector(scale(QTL.predictor))
@@ -351,22 +355,22 @@ simulate.CC.qtl <- function(CC.lines,
   }
   else{ strain.predictor <- rep(0, length(CC.lines)) }
   
-  var.table <- matrix(NA, nrow=num.sim, ncol=3)
+  var.table <- matrix(NA, nrow=num.sim, ncol=4)
   sim.data <- matrix(NA, nrow=nrow(this.locus.matrix), ncol=num.sim)
   for (i in 1:num.sim) {
     scaled.resid <- calc.scaled.residual(qtl.effect.size=qtl.effect.size, 
                                          strain.effect.size=strain.effect.size,
                                          n=nrow(this.locus.matrix))
     sim.data[,i] <- QTL.predictor + strain.predictor + scaled.resid
-    
     var.table[i,] <- c(qtl.effect.size, 
                        var(2*QTL.effect$M %*% QTL.effect$beta),
-                       var(locus.matrix %*% t(full.to.add.matrix) %*% QTL.effect$M %*% QTL.effect$beta))
+                       var(D %*% t(full.to.add.matrix) %*% QTL.effect$M %*% QTL.effect$beta),
+                       var(this.locus.matrix %*% QTL.effect$M %*% QTL.effect$beta))
   }
   
   colnames(sim.data) <- paste0("sim.y.", 1:ncol(sim.data))
   sim.data <- data.frame(sim.data, "SUBJECT.NAME"=rep(CC.lines, each=num.replicates))
-  colnames(var.table) <- c("balanced.ve", "unbalanced.ve", "varp.ve")
+  colnames(var.table) <- c("B.ve", "MB.ve", "DAMB.ve", "ZDAMB.ve")
   
   ## Taking residuals
   if (return.value == "fixef.resid") {
