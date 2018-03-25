@@ -8,7 +8,8 @@ sim.CC.data(genomecache, CC.lines = NULL, num.lines = NULL,
   vary.lines = TRUE, locus = NULL, vary.locus = TRUE, num.replicates,
   num.sim, M.ID = NULL, sample.as.method = c("uniform", "crp"),
   num.alleles = 8, num.founders = 8, qtl.effect.size, beta = NULL,
-  strain.effect.size = 0, impute = TRUE, scale.by.varp = FALSE,
+  strain.effect.size = 0, impute = TRUE, scale.qtl.mode = c("B", "MB",
+  "DAMB", "ZDAMB", "none"), scale.strain.mode = c("d", "Zd"),
   return.value = c("raw", "fixef.resid", "ranef.resid"),
   return.means = TRUE)
 }
@@ -70,8 +71,18 @@ is in proportion of the phenotypic variance due to the strain, thus should be gr
 of haplotypes from the probabilities. If FALSE, the simulations are based on the probabilities, which is flawed in
 terms of biological reality.}
 
-\item{scale.by.varp}{DEFAULT: TRUE. If TRUE, the effects are scaled by var(X %*% QTL effect) so that the effect matches
-the stated proportion of variance in the observed population.}
+\item{scale.qtl.mode}{DEFAULT: "B". Specifies how the QTL effect is scaled. If "B", then the variance of the qtl effect
+vector beta is scaled to the effect size specified in qtl.effect.size, which would be the variance explained in a population
+perfectly balanced in terms of the functional alleles. If "MB", the the variance of M %*% beta is scaled, which would be
+the variance explained in a population balanced in terms of founder strains with the allelic series that is specified in M. 
+If "DAMB", the variance of D %*% A %*% M %*% beta is scaled, which would be the variance explained in a population of a 
+specific set of CC strains (specified in D). If "ZAMB", the variance of Z %*% D %*% A %*% M %*% beta is scaled, which would
+be the variance explained in the specific population of CC strains the number of replicates (specified in Z).}
+
+\item{scale.strain.mode}{DEFAULT: "d". Specifies how the strain effect is scaled. If "d", then the variance of
+delta is scaled to the effect size specified in strain.effect.size, which would be the varianced explained in the
+population without replicates. If "Zd", then Z %*% delta is scaled, which would be the variance explained in a population with
+the number of replicates specified in Z. This option more strongly controls the variation from strain effect.}
 
 \item{return.value}{DEFAULT: "raw". If "raw", residuals are not taken. If "fixef.resid", then the data
 are residuals after regressing phenotype on strain. If "ranef.resid", then the data have had the strain BLUP
