@@ -247,7 +247,7 @@ sim.CC.data <- function(genomecache,
     M <- model.matrix.from.ID(M.ID)
     num.alleles <- length(unique(unlist(strsplit(x=M.ID, split=","))))
   }
-  var.table <- matrix(NA, nrow=num.sim, ncol=4)
+  var.table <- matrix(NA, nrow=num.sim, ncol=8)
   sim.matrix <- matrix(NA, nrow=num.ind, ncol=num.sim)
   id.matrix <- matrix(NA, nrow=num.ind, ncol=ifelse(vary.lines, num.sim, 1))
   for(i in 1:num.sim){
@@ -391,22 +391,28 @@ simulate.CC.qtl <- function(CC.lines,
   }
   else{ strain.predictor <- rep(0, length(CC.lines)) }
   
-  var.table <- matrix(NA, nrow=num.sim, ncol=4)
+  var.table <- matrix(NA, nrow=num.sim, ncol=8)
   sim.data <- matrix(NA, nrow=nrow(this.locus.matrix), ncol=num.sim)
   for (i in 1:num.sim) {
     scaled.resid <- calc.scaled.residual(qtl.effect.size=qtl.effect.size, 
                                          strain.effect.size=strain.effect.size,
                                          n=nrow(this.locus.matrix))
+    this.denominator <- 
     sim.data[,i] <- QTL.predictor + strain.predictor + scaled.resid
     var.table[i,] <- c(var(2*beta), 
                        var(2*QTL.effect$M %*% beta),
                        var(D %*% t(full.to.add.matrix) %*% QTL.effect$M %*% beta),
-                       var(this.locus.matrix %*% QTL.effect$M %*% beta))
+                       var(this.locus.matrix %*% QTL.effect$M %*% beta),
+                       var(2*beta)/(var(2*beta) + var(strain.predictor) + var(scaled.resid)),
+                       var(2*QTL.effect$M %*% beta)/(var(2*QTL.effect$M %*% beta) + var(strain.predictor) + var(scaled.resid)),
+                       var(D %*% t(full.to.add.matrix) %*% QTL.effect$M %*% beta)/(var(D %*% t(full.to.add.matrix) %*% QTL.effect$M %*% beta) + var(strain.predictor) + var(scaled.resid)),
+                       var(this.locus.matrix %*% QTL.effect$M %*% beta)/(var(this.locus.matrix %*% QTL.effect$M %*% beta) + var(strain.predictor) + var(scaled.resid)))
   }
   
   colnames(sim.data) <- paste0("sim.y.", 1:ncol(sim.data))
   sim.data <- data.frame(sim.data, "SUBJECT.NAME"=rep(CC.lines, each=num.replicates))
-  colnames(var.table) <- c("B.ve", "MB.ve", "DAMB.ve", "ZDAMB.ve")
+  colnames(var.table) <- c("B.effect", "MB.effect", "DAMB.effect", "ZDAMB.effect",
+                           "B.ve", "MB.ve", "DAMB.ve", "ZDAMB.ve")
   
   ## Taking residuals
   if (return.value == "fixef.resid") {
@@ -577,6 +583,127 @@ single.sim.plot <- function(sim.scans,
                        scale=scale, mark.locus=locus, hard.thresholds=thresh[phenotype.index], ...)
 }
 
+#' @export
+sim.data.effect.plot <- function(sim.data,
+                             x.var=c("B.effect", "MB.effect", "DAMB.effect", "ZDAMB.effect"),
+                             y.var=c("MB.effect", "DAMB.effect", "ZDAMB.effect", "B.effect"),
+                             qtl.col="red", title="") {
+  x.var <- x.var[1]
+  y.var <- y.var[1]
+  nominal.effect.size <- sim.data$properties$qtl.effect.size
+  var.table <- sim.data$properties$var.table
+  
+  x.val <- var.table[,x.var]
+  y.val <- var.table[,y.var]
+  
+  x.max <- max(x.val, nominal.effect.size)
+  y.max <- max(y.val, nominal.effect.size)
+  
+  plot(x.val, y.val,
+       xlab=x.var, ylab=y.var, xlim=c(0, x.max), ylim=c(0, y.max),
+       frame.plot=FALSE, pch=20, las=1, main=title)
+  abline(0, 1, lty=3)
+  abline(v=nominal.effect.size, lty=2, col=qtl.col)
+  abline(h=nominal.effect.size, lty=2, col=qtl.col)
+}
+
+#' @export
+sim.data.ve.plot <- function(sim.data,
+                             x.var=c("B.ve", "MB.ve", "DAMB.ve", "ZDAMB.ve"),
+                             y.var=c("MB.ve", "DAMB.ve", "ZDAMB.ve", "B.ve"),
+                             qtl.col="red", title="") {
+  x.var <- x.var[1]
+  y.var <- y.var[1]
+  nominal.effect.size <- sim.data$properties$qtl.effect.size
+  var.table <- sim.data$properties$var.table
+  
+  x.val <- var.table[,x.var]
+  y.val <- var.table[,y.var]
+  
+  plot(x.val, y.val,
+       xlab=x.var, ylab=y.var, xlim=c(0, 1), ylim=c(0, 1),
+       frame.plot=FALSE, pch=20, las=1, main=title)
+  abline(0, 1, lty=3)
+  abline(v=nominal.effect.size, lty=2, col=qtl.col)
+  abline(h=nominal.effect.size, lty=2, col=qtl.col)
+}
+
+#' @export
+sim.data.all.ve.plot <- function(sim.data,
+                                 x.var=c("B.ve", "MB.ve", "DAMB.ve", "ZDAMB.ve"),
+                                 ve.col=c("cyan", "chartreuse", "magenta", "orange"),
+                                 ve.pch=c(15, 17, 18, 19),
+                                 qtl.col="red",
+                                 transparency=0.5,
+                                 legend.pos="topleft",
+                                 title="") {
+  x.var <- x.var[1]
+  nominal.effect.size <- sim.data$properties$qtl.effect.size
+  var.table <- sim.data$properties$var.table[,grep(x=colnames(sim.data$properties$var.table), pattern="ve")]
+  
+  ve.col <- c(scales::alpha(ve.col[1], transparency),
+              scales::alpha(ve.col[2], transparency),
+              scales::alpha(ve.col[3], transparency),
+              scales::alpha(ve.col[4], transparency))
+  
+  x.val <- var.table[,x.var]
+  keep <- !(colnames(var.table) %in% x.var)
+  y.tab <- var.table[,keep]
+  ve.col <- ve.col[keep]
+  ve.pch <- ve.pch[keep]
+  
+  plot(x.val, y.tab[,3],
+       xlab=x.var, ylab="Proportion of variance", xlim=c(0, 1), ylim=c(0, 1),
+       frame.plot=FALSE, pch=ve.pch[3], las=1, col=ve.col[3], cex=1.5, main=title)
+  for (i in c(2, 1)) {
+    points(x.val, y.tab[,i], col=ve.col[i], pch=ve.pch[i], cex=1.5)
+  }
+  abline(0, 1, lty=3)
+  abline(v=nominal.effect.size, lty=2, col=qtl.col)
+  abline(h=nominal.effect.size, lty=2, col=qtl.col)
+  
+  legend(legend.pos, legend=colnames(y.tab), col=ve.col, pch=ve.pch, cex=1.5, bty="n")
+}
+
+#' @export
+sim.data.all.effect.plot <- function(sim.data,
+                                 x.var=c("B.effect", "MB.effect", "DAMB.effect", "ZDAMB.effect"),
+                                 ve.col=c("cyan", "chartreuse", "magenta", "orange"),
+                                 ve.pch=c(15, 17, 18, 19),
+                                 qtl.col="red",
+                                 transparency=0.5,
+                                 legend.pos="topleft",
+                                 title="") {
+  x.var <- x.var[1]
+  nominal.effect.size <- sim.data$properties$qtl.effect.size
+  var.table <- sim.data$properties$var.table[,grep(x=colnames(sim.data$properties$var.table), pattern="effect")]
+  
+  ve.col <- c(scales::alpha(ve.col[1], transparency),
+              scales::alpha(ve.col[2], transparency),
+              scales::alpha(ve.col[3], transparency),
+              scales::alpha(ve.col[4], transparency))
+  
+  x.val <- var.table[,x.var]
+  keep <- !(colnames(var.table) %in% x.var)
+  y.tab <- var.table[,keep]
+  ve.col <- ve.col[keep]
+  ve.pch <- ve.pch[keep]
+  
+  x.max <- max(x.val, nominal.effect.size)
+  y.max <- max(y.tab, nominal.effect.size)
+  
+  plot(x.val, y.tab[,3],
+       xlab=x.var, ylab="Proportion of variance", xlim=c(0, x.max), ylim=c(0, y.max),
+       frame.plot=FALSE, pch=ve.pch[3], las=1, col=ve.col[3], cex=1.5, main=title)
+  for (i in c(2, 1)) {
+    points(x.val, y.tab[,i], col=ve.col[i], pch=ve.pch[i], cex=1.5)
+  }
+  abline(0, 1, lty=3)
+  abline(v=nominal.effect.size, lty=2, col=qtl.col)
+  abline(h=nominal.effect.size, lty=2, col=qtl.col)
+  
+  legend(legend.pos, legend=colnames(y.tab), col=ve.col, pch=ve.pch, cex=1.5, bty="n")
+}
 
 #' Calculate the QTL mapping power from SPARCC genome scans output from run.sim.scans()
 #'
@@ -664,5 +791,3 @@ pull.qr.from.compact <- function(compact.qr.list,
                     formula=compact.qr.list$shared$formula)
   return(output.qr)
 }
-
-  
