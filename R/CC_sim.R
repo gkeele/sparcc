@@ -631,6 +631,7 @@ sim.data.ve.plot <- function(sim.data,
 #' @export
 sim.data.all.ve.plot <- function(sim.data,
                                  x.var=c("B.ve", "MB.ve", "DAMB.ve", "ZDAMB.ve"),
+                                 include.types=c("B.ve", "MB.ve", "DAMB.ve"),
                                  ve.col=c("cyan", "chartreuse", "magenta", "orange"),
                                  ve.pch=c(15, 17, 18, 19),
                                  qtl.col="red",
@@ -639,12 +640,16 @@ sim.data.all.ve.plot <- function(sim.data,
                                  title="") {
   x.var <- x.var[1]
   nominal.effect.size <- sim.data$properties$qtl.effect.size
-  var.table <- sim.data$properties$var.table[,grep(x=colnames(sim.data$properties$var.table), pattern="ve")]
+  original.types <- colnames(sim.data$properties$var.table)[grep(x=colnames(sim.data$properties$var.table), pattern="ve")]
+
+  var.table <- sim.data$properties$var.table[,unique(c(x.var, include.types))]
   
   ve.col <- c(scales::alpha(ve.col[1], transparency),
               scales::alpha(ve.col[2], transparency),
               scales::alpha(ve.col[3], transparency),
               scales::alpha(ve.col[4], transparency))
+  ve.col <- ve.col[original.types %in% include.types]
+  ve.pch <- ve.pch[original.types %in% include.types]
   
   x.val <- var.table[,x.var]
   keep <- !(colnames(var.table) %in% x.var)
@@ -652,11 +657,13 @@ sim.data.all.ve.plot <- function(sim.data,
   ve.col <- ve.col[keep]
   ve.pch <- ve.pch[keep]
   
-  plot(x.val, y.tab[,3],
+  plot(x.val, y.tab[,ncol(y.tab)],
        xlab=x.var, ylab="Proportion of variance", xlim=c(0, 1), ylim=c(0, 1),
-       frame.plot=FALSE, pch=ve.pch[3], las=1, col=ve.col[3], cex=1.5, main=title)
-  for (i in c(2, 1)) {
-    points(x.val, y.tab[,i], col=ve.col[i], pch=ve.pch[i], cex=1.5)
+       frame.plot=FALSE, pch=ve.pch[ncol(y.tab)], las=1, col=ve.col[ncol(y.tab)], cex=1.5, main=title)
+  if (ncol(y.tab) > 1) {
+    for (i in rev(2:ncol(y.tab)-1)) {
+      points(x.val, y.tab[,i], col=ve.col[i], pch=ve.pch[i], cex=1.5)
+    }
   }
   abline(0, 1, lty=3)
   abline(v=nominal.effect.size, lty=2, col=qtl.col)
@@ -668,6 +675,7 @@ sim.data.all.ve.plot <- function(sim.data,
 #' @export
 sim.data.all.effect.plot <- function(sim.data,
                                  x.var=c("B.effect", "MB.effect", "DAMB.effect", "ZDAMB.effect"),
+                                 include.types=c("B.effect", "MB.effect", "DAMB.effect"),
                                  ve.col=c("cyan", "chartreuse", "magenta", "orange"),
                                  ve.pch=c(15, 17, 18, 19),
                                  qtl.col="red",
@@ -676,12 +684,16 @@ sim.data.all.effect.plot <- function(sim.data,
                                  title="") {
   x.var <- x.var[1]
   nominal.effect.size <- sim.data$properties$qtl.effect.size
-  var.table <- sim.data$properties$var.table[,grep(x=colnames(sim.data$properties$var.table), pattern="effect")]
+  original.types <- colnames(sim.data$properties$var.table)[grep(x=colnames(sim.data$properties$var.table), pattern="effect")]
+  
+  var.table <- sim.data$properties$var.table[,unique(c(x.var, include.types))]
   
   ve.col <- c(scales::alpha(ve.col[1], transparency),
               scales::alpha(ve.col[2], transparency),
               scales::alpha(ve.col[3], transparency),
               scales::alpha(ve.col[4], transparency))
+  ve.col <- ve.col[original.types %in% include.types]
+  ve.pch <- ve.pch[original.types %in% include.types]
   
   x.val <- var.table[,x.var]
   keep <- !(colnames(var.table) %in% x.var)
@@ -692,11 +704,13 @@ sim.data.all.effect.plot <- function(sim.data,
   x.max <- max(x.val, nominal.effect.size)
   y.max <- max(y.tab, nominal.effect.size)
   
-  plot(x.val, y.tab[,3],
+  plot(x.val, y.tab[,ncol(y.tab)],
        xlab=x.var, ylab="Proportion of variance", xlim=c(0, x.max), ylim=c(0, y.max),
-       frame.plot=FALSE, pch=ve.pch[3], las=1, col=ve.col[3], cex=1.5, main=title)
-  for (i in c(2, 1)) {
-    points(x.val, y.tab[,i], col=ve.col[i], pch=ve.pch[i], cex=1.5)
+       frame.plot=FALSE, pch=ve.pch[ncol(y.tab)], las=1, col=ve.col[ncol(y.tab)], cex=1.5, main=title)
+  if (ncol(y.tab) > 1) {
+    for (i in rev(2:ncol(y.tab)-1)) {
+      points(x.val, y.tab[,i], col=ve.col[i], pch=ve.pch[i], cex=1.5)
+    }
   }
   abline(0, 1, lty=3)
   abline(v=nominal.effect.size, lty=2, col=qtl.col)
