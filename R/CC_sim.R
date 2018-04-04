@@ -365,7 +365,7 @@ simulate.CC.qtl <- function(CC.lines,
   else if (scale.qtl.mode == "DAMB") {
     var.ratio <- var(D %*% t(full.to.add.matrix) %*% QTL.effect$M %*% beta)/var(2*beta)
     
-    if (var.ration != 0) { # Case when more than one allele is observed
+    if (var.ratio != 0) { # Case when more than one allele is observed
       beta <- as.vector(0.5*beta*sqrt(qtl.effect.size))*sqrt(1/var.ratio)
     }
     else { # Case when only one allele is observed, should result in a null scan
@@ -375,7 +375,7 @@ simulate.CC.qtl <- function(CC.lines,
   else if (scale.qtl.mode == "ZDAMB") {
     var.ratio <- var(this.locus.matrix %*% QTL.effect$M %*% beta)/var(2*beta)
     
-    if (var.ration != 0) { # Case when more than one allele is observed
+    if (var.ratio != 0) { # Case when more than one allele is observed
       beta <- as.vector(0.5*beta*sqrt(qtl.effect.size))*sqrt(1/var.ratio)
     }
     else { # Case when only one allele is observed, should result in a null scan
