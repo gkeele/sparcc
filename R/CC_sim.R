@@ -412,14 +412,14 @@ simulate.CC.qtl <- function(CC.lines,
                                          n=nrow(this.locus.matrix))
     this.denominator <- 
     sim.data[,i] <- QTL.predictor + strain.predictor + scaled.resid
-    var.table[i,] <- c(var(2*beta), 
-                       var(2*QTL.effect$M %*% beta),
-                       var(D %*% t(full.to.add.matrix) %*% QTL.effect$M %*% beta),
-                       var(this.locus.matrix %*% QTL.effect$M %*% beta),
-                       var(2*beta)/(var(2*beta) + var(strain.predictor) + var(scaled.resid)),
-                       var(2*QTL.effect$M %*% beta)/(var(2*QTL.effect$M %*% beta) + var(strain.predictor) + var(scaled.resid)),
-                       var(D %*% t(full.to.add.matrix) %*% QTL.effect$M %*% beta)/(var(D %*% t(full.to.add.matrix) %*% QTL.effect$M %*% beta) + var(strain.predictor) + var(scaled.resid)),
-                       var(this.locus.matrix %*% QTL.effect$M %*% beta)/(var(this.locus.matrix %*% QTL.effect$M %*% beta) + var(strain.predictor) + var(scaled.resid)))
+    var.table[i,] <- c(non.sample.var(2*beta), 
+                       non.sample.var(2*QTL.effect$M %*% beta),
+                       non.sample.var(D %*% t(full.to.add.matrix) %*% QTL.effect$M %*% beta),
+                       non.sample.var(this.locus.matrix %*% QTL.effect$M %*% beta),
+                       non.sample.var(2*beta)/(non.sample.var(2*beta) + non.sample.var(strain.predictor) + non.sample.var(scaled.resid)),
+                       non.sample.var(2*QTL.effect$M %*% beta)/(non.sample.var(2*QTL.effect$M %*% beta) + non.sample.var(strain.predictor) + non.sample.var(scaled.resid)),
+                       non.sample.var(D %*% t(full.to.add.matrix) %*% QTL.effect$M %*% beta)/(non.sample.var(D %*% t(full.to.add.matrix) %*% QTL.effect$M %*% beta) + non.sample.var(strain.predictor) + non.sample.var(scaled.resid)),
+                       non.sample.var(this.locus.matrix %*% QTL.effect$M %*% beta)/(non.sample.var(this.locus.matrix %*% QTL.effect$M %*% beta) + non.sample.var(strain.predictor) + non.sample.var(scaled.resid)))
   }
   
   colnames(sim.data) <- paste0("sim.y.", 1:ncol(sim.data))
