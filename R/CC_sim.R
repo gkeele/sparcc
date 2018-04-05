@@ -350,7 +350,8 @@ simulate.CC.qtl <- function(CC.lines,
                        beta=rep(0, 8))
   }
   if (scale.qtl.mode != "none") {
-    beta <- as.vector(scale(QTL.effect$beta))
+    #beta <- as.vector(scale(QTL.effect$beta))
+    beta <- (QTL.effect$beta - mean(QTL.effect$beta))/sqrt(non.sample.var(QTL.effect$beta))
   }
   if (scale.qtl.mode == "B") {
     beta <- as.vector(0.5*beta*sqrt(qtl.effect.size)) 
@@ -358,12 +359,12 @@ simulate.CC.qtl <- function(CC.lines,
     QTL.predictor <- tcrossprod(tcrossprod(this.locus.matrix, t(QTL.effect$M)), matrix(beta, nrow=1))
   }
   else if (scale.qtl.mode == "MB") {
-    var.ratio <- var(2*QTL.effect$M %*% beta)/var(2*beta)
+    var.ratio <- non.sample.var(2*QTL.effect$M %*% beta)/non.sample.var(2*beta)
 
     beta <- as.vector(0.5*beta*sqrt(qtl.effect.size))*sqrt(1/var.ratio)
   }
   else if (scale.qtl.mode == "DAMB") {
-    var.ratio <- var(D %*% t(full.to.add.matrix) %*% QTL.effect$M %*% beta)/var(2*beta)
+    var.ratio <- non.sample.var(D %*% t(full.to.add.matrix) %*% QTL.effect$M %*% beta)/non.sample.var(2*beta)
     
     if (var.ratio != 0) { # Case when more than one allele is observed
       beta <- as.vector(0.5*beta*sqrt(qtl.effect.size))*sqrt(1/var.ratio)
@@ -373,7 +374,7 @@ simulate.CC.qtl <- function(CC.lines,
     }
   }
   else if (scale.qtl.mode == "ZDAMB") {
-    var.ratio <- var(this.locus.matrix %*% QTL.effect$M %*% beta)/var(2*beta)
+    var.ratio <- non.sample.var(this.locus.matrix %*% QTL.effect$M %*% beta)/non.sample.var(2*beta)
     
     if (var.ratio != 0) { # Case when more than one allele is observed
       beta <- as.vector(0.5*beta*sqrt(qtl.effect.size))*sqrt(1/var.ratio)
@@ -390,12 +391,14 @@ simulate.CC.qtl <- function(CC.lines,
     this.strain.matrix <- this.strain.matrix[rep(1:nrow(this.strain.matrix), each=num.replicates),]
     
     strain.effect <- rnorm(n=length(CC.lines))
-    strain.effect <- as.vector(scale(strain.effect))
+    #strain.effect <- as.vector(scale(strain.effect))
+    strain.effect <- (strain.effect - mean(strain.effect))/sqrt(non.sample.var(strain.effect))
 
     strain.predictor <- this.strain.matrix %*% matrix(strain.effect, ncol=1)
 
     if (scale.strain.mode == "Zd") {
-      strain.predictor <- as.vector(scale(strain.predictor))
+      #strain.predictor <- as.vector(scale(strain.predictor))
+      strain.predictor <- (strain.predictor - mean(strain.predictor))/sqrt(non.sample.var(strain.predictor))
       strain.predictor <- as.vector(strain.predictor*sqrt(strain.effect.size))
     }
   }
@@ -452,6 +455,11 @@ simulate.CC.qtl <- function(CC.lines,
                               var.table=var.table)))
 }
 
+non.sample.var <- function(x) {
+  var.x <- var(x)*((length(x) - 1)/length(x))
+  return(var.x)
+}
+
 take.fixef.residuals <- function(data, locus.matrix, strain.matrix){
   locus.matrix <- locus.matrix[,-which.max(colSums(locus.matrix))]
   rownames(locus.matrix) <- NULL
@@ -493,7 +501,8 @@ calc.scaled.residual <- function(qtl.effect.size,
                                  n){
 
   residual <- rnorm(n=n)
-  residual <- as.vector(scale(residual))
+  #residual <- as.vector(scale(residual))
+  residual <- (residual - mean(residual))/sqrt(non.sample.var(residual))
   residual <- as.vector(residual*sqrt(1 - qtl.effect.size - strain.effect.size))
   return(residual)
 }
