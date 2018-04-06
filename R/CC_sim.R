@@ -153,12 +153,7 @@ run.sim.scans <- function(sim.data,
 #' perfectly balanced in terms of the functional alleles. If "MB", the the variance of M %*% beta is scaled, which would be
 #' the variance explained in a population balanced in terms of founder strains with the allelic series that is specified in M. 
 #' If "DAMB", the variance of D %*% A %*% M %*% beta is scaled, which would be the variance explained in a population of a 
-#' specific set of CC strains (specified in D). If "ZAMB", the variance of Z %*% D %*% A %*% M %*% beta is scaled, which would
-#' be the variance explained in the specific population of CC strains the number of replicates (specified in Z).
-#' @param scale.strain.mode DEFAULT: "d". Specifies how the strain effect is scaled. If "d", then the variance of
-#' delta is scaled to the effect size specified in strain.effect.size, which would be the varianced explained in the
-#' population without replicates. If "Zd", then Z %*% delta is scaled, which would be the variance explained in a population with
-#' the number of replicates specified in Z. This option more strongly controls the variation from strain effect.
+#' specific set of CC strains (specified in D).
 #' @param return.value DEFAULT: "raw". If "raw", residuals are not taken. If "fixef.resid", then the data
 #' are residuals after regressing phenotype on strain. If "ranef.resid", then the data have had the strain BLUP
 #' effect subtracted.
@@ -182,14 +177,12 @@ sim.CC.data <- function(genomecache,
                         beta=NULL,
                         strain.effect.size=0,
                         impute=TRUE,
-                        scale.qtl.mode=c("B", "MB", "DAMB", "ZDAMB", "none"),
-                        scale.strain.mode=c("d", "Zd"),
+                        scale.qtl.mode=c("B", "MB", "DAMB", "none"),
                         return.value=c("raw", "fixef.resid", "ranef.resid"),
                         return.means=TRUE){
   
   h <- miqtl::DiploprobReader$new(genomecache)
   scale.qtl.mode <- scale.qtl.mode[1]
-  scale.strain.mode <- scale.strain.mode[1]
   return.value <- return.value[1]
   sample.as.method <- sample.as.method[1]
   
@@ -247,7 +240,7 @@ sim.CC.data <- function(genomecache,
     M <- model.matrix.from.ID(M.ID)
     num.alleles <- length(unique(unlist(strsplit(x=M.ID, split=","))))
   }
-  var.table <- matrix(NA, nrow=num.sim, ncol=8)
+  B.var.table <- MB.var.table <- DAMB.var.table <- matrix(NA, nrow=num.sim, ncol=6)
   sim.matrix <- matrix(NA, nrow=num.ind, ncol=num.sim)
   id.matrix <- matrix(NA, nrow=num.ind, ncol=ifelse(vary.lines, num.sim, 1))
   for(i in 1:num.sim){
@@ -261,22 +254,23 @@ sim.CC.data <- function(genomecache,
                                 strain.effect.size=strain.effect.size,
                                 impute=impute,
                                 scale.qtl.mode=scale.qtl.mode,
-                                scale.strain.mode=scale.strain.mode,
                                 locus.matrix=h$getLocusMatrix(locus=locus[locus.index[i]], model="full"),
                                 return.value=return.value,
                                 return.means=return.means,
                                 num.sim=1)
-    this.var.table <- this.sim$properties$var.table
+    these.var.tables <- this.sim$properties$var.tables
     this.sim <- this.sim$data
     sim.matrix[,i] <- this.sim[,1]
-    var.table[i,] <- this.var.table[1,]
+    B.var.table[i,] <- these.var.tables$B[1,]
+    MB.var.table[i,] <- these.var.tables$MB[1,]
+    DAMB.var.table[i,] <- these.var.tables$DAMB[1,]
     if(vary.lines | i == 1){
       id.matrix[,i] <- as.character(this.sim[,2])
     }
   }
   colnames(sim.matrix) <- paste0("sim.y.", 1:num.sim)
   colnames(id.matrix) <- paste0("SUBJECT.NAME.", 1:ncol(id.matrix))
-  colnames(var.table) <- colnames(this.var.table)
+  colnames(B.var.table) <- colnames(MB.var.table) <- colnames(DAMB.var.table) <- colnames(these.var.tables$B)
   
   outcome <- data.frame(sim.matrix, id.matrix)
   return(list(data=outcome,
@@ -293,13 +287,14 @@ sim.CC.data <- function(genomecache,
                               num.lines=num.lines,
                               impute=impute,
                               scale.qtl.mode=scale.qtl.mode,
-                              scale.strain.mode=scale.strain.mode,
                               M.ID=M.ID,
                               vary.lines=vary.lines,
                               vary.locus=vary.locus,
                               return.value=return.value,
                               return.means=return.means,
-                              var.table=var.table)))
+                              var.tables=list(B=B.var.table,
+                                              MB=MB.var.table,
+                                              DAMB=DAMB.var.table))))
 }
 
 simulate.CC.qtl <- function(CC.lines, 
@@ -314,13 +309,11 @@ simulate.CC.qtl <- function(CC.lines,
                             locus.matrix, 
                             num.sim,
                             impute=TRUE, 
-                            scale.qtl.mode=c("B", "MB", "DAMB", "ZDAMB", "none"),
-                            scale.strain.mode=c("d", "Zd"),
+                            scale.qtl.mode=c("B", "MB", "DAMB", "none"),
                             return.value=c("raw", "fixef.resid", "ranef.resid"),
                             return.means=TRUE,
                             ...){
   scale.qtl.mode <- scale.qtl.mode[1]
-  scale.strain.mode <- scale.strain.mode[1]
   return.value <- return.value[1]
   sample.as.method <- sample.as.method[1]
 
@@ -331,12 +324,24 @@ simulate.CC.qtl <- function(CC.lines,
     rownames(this.locus.matrix) <- CC.lines
   }
   D <- this.locus.matrix ## Saved for variance calculations
-  this.locus.matrix <- this.locus.matrix[rep(1:length(CC.lines), each=num.replicates),]
+  ZD <- D[rep(1:length(CC.lines), each=num.replicates),]
   
   full.to.add.matrix <- t(miqtl::straineff.mapping.matrix(M=num.founders))
   
+  ## Strain
+  Z <- incidence.matrix(factor(CC.lines, levels=CC.lines))
+  Z <- Z[rep(1:nrow(Z), each=num.replicates),]
+  if (strain.effect.size != 0) {
+    strain.effect <- rnorm(n=length(CC.lines))
+    strain.effect <- (strain.effect - mean(strain.effect))/sqrt(non.sample.var(strain.effect))
+    strain.effect <- strain.effect * sqrt(strain.effect.size)
+
+    strain.predictor <- Z %*% matrix(strain.effect, ncol=1)
+  }
+  else{ strain.predictor <- rep(0, nrow(Z)) }
+  
   ## QTL
-  this.locus.matrix <- tcrossprod(this.locus.matrix, full.to.add.matrix)
+  ZDA <- tcrossprod(ZD, full.to.add.matrix)
   if (qtl.effect.size != 0) {
     QTL.effect <- simulate.QTL.model.and.effects(num.alleles=num.alleles, 
                                                  num.founders=num.founders, 
@@ -349,83 +354,73 @@ simulate.CC.qtl <- function(CC.lines,
     QTL.effect <- list(M=diag(8),
                        beta=rep(0, 8))
   }
+  M <- QTL.effect$M
+  raw.beta <- QTL.effect$beta 
   if (scale.qtl.mode != "none") {
-    #beta <- as.vector(scale(QTL.effect$beta))
-    beta <- (QTL.effect$beta - mean(QTL.effect$beta))/sqrt(non.sample.var(QTL.effect$beta))
+    beta <- (raw.beta - mean(raw.beta))/sqrt(non.sample.var(raw.beta))
   }
-  if (scale.qtl.mode == "B") {
-    beta <- as.vector(0.5*beta*sqrt(qtl.effect.size)) 
-    
-    QTL.predictor <- tcrossprod(tcrossprod(this.locus.matrix, t(QTL.effect$M)), matrix(beta, nrow=1))
-  }
-  else if (scale.qtl.mode == "MB") {
-    var.ratio <- non.sample.var(2*QTL.effect$M %*% beta)/non.sample.var(2*beta)
-
-    beta <- as.vector(0.5*beta*sqrt(qtl.effect.size))*sqrt(1/var.ratio)
-  }
-  else if (scale.qtl.mode == "DAMB") {
-    var.ratio <- non.sample.var(D %*% t(full.to.add.matrix) %*% QTL.effect$M %*% beta)/non.sample.var(2*beta)
-    
-    if (var.ratio != 0) { # Case when more than one allele is observed
-      beta <- as.vector(0.5*beta*sqrt(qtl.effect.size))*sqrt(1/var.ratio)
-    }
-    else { # Case when only one allele is observed, should result in a null scan
-      beta <- as.vector(0.5*beta*sqrt(qtl.effect.size))
-    }
-  }
-  else if (scale.qtl.mode == "ZDAMB") {
-    var.ratio <- non.sample.var(this.locus.matrix %*% QTL.effect$M %*% beta)/non.sample.var(2*beta)
-    
-    if (var.ratio != 0) { # Case when more than one allele is observed
-      beta <- as.vector(0.5*beta*sqrt(qtl.effect.size))*sqrt(1/var.ratio)
-    }
-    else { # Case when only one allele is observed, should result in a null scan
-      beta <- as.vector(0.5*beta*sqrt(qtl.effect.size))
-    }
-  }
-  QTL.predictor <- tcrossprod(tcrossprod(this.locus.matrix, t(QTL.effect$M)), matrix(beta, nrow=1))
-
-  ## Strain
-  if (strain.effect.size != 0) {
-    this.strain.matrix <- incidence.matrix(factor(CC.lines, levels=CC.lines))
-    this.strain.matrix <- this.strain.matrix[rep(1:nrow(this.strain.matrix), each=num.replicates),]
-    
-    strain.effect <- rnorm(n=length(CC.lines))
-    #strain.effect <- as.vector(scale(strain.effect))
-    strain.effect <- (strain.effect - mean(strain.effect))/sqrt(non.sample.var(strain.effect))
-
-    strain.predictor <- this.strain.matrix %*% matrix(strain.effect, ncol=1)
-
-    if (scale.strain.mode == "Zd") {
-      #strain.predictor <- as.vector(scale(strain.predictor))
-      strain.predictor <- (strain.predictor - mean(strain.predictor))/sqrt(non.sample.var(strain.predictor))
-      strain.predictor <- as.vector(strain.predictor*sqrt(strain.effect.size))
-    }
-  }
-  else{ strain.predictor <- rep(0, length(CC.lines)) }
+  else { beta <- raw.beta }
   
-  var.table <- matrix(NA, nrow=num.sim, ncol=8)
-  sim.data <- matrix(NA, nrow=nrow(this.locus.matrix), ncol=num.sim)
+  ### B
+  B.var.effects <- calc.qtl.effect(beta = 0.5*beta*sqrt(qtl.effect.size),
+                                   M = M,
+                                   A = t(full.to.add.matrix),
+                                   D = D,
+                                   Z = Z,
+                                   strain.effect.size = strain.effect.size,
+                                   noise.effect.size = 1 - qtl.effect.size - strain.effect.size)
+  if (scale.qtl.mode == "B") {
+    QTL.predictor <- B.var.effects$QTL.predictor
+  }
+  
+  ### MB
+  var.ratio <- non.sample.var(2*M %*% beta)/non.sample.var(2*beta)
+  MB.var.effects <- calc.qtl.effect(beta = 0.5*beta*sqrt(qtl.effect.size)*sqrt(1/var.ratio),
+                                    M = M,
+                                    A = t(full.to.add.matrix),
+                                    D = D,
+                                    Z = Z,
+                                    strain.effect.size = strain.effect.size,
+                                    noise.effect.size = 1 - qtl.effect.size - strain.effect.size)
+  if (scale.qtl.mode == "MB") {
+    QTL.predictor <- MB.var.effects$QTL.predictor
+  }
+  
+  ### DAMB
+  var.ratio <- non.sample.var(D %*% t(full.to.add.matrix) %*% M %*% beta)/non.sample.var(2*beta)
+  if (var.ratio != 0) { # Case when more than one allele is observed
+    DAMB.beta <- 0.5*beta*sqrt(qtl.effect.size)*sqrt(1/var.ratio)
+  }
+  else { # Case when only one allele is observed, should result in a null scan
+    DAMB.beta <- 0.5*beta*sqrt(qtl.effect.size)
+  }
+  DAMB.var.effects <- calc.qtl.effect(beta = DAMB.beta,
+                                      M = M,
+                                      A = t(full.to.add.matrix),
+                                      D = D,
+                                      Z = Z,
+                                      strain.effect.size = strain.effect.size,
+                                      noise.effect.size = 1 - qtl.effect.size - strain.effect.size)
+  if (scale.qtl.mode == "DAMB") {
+    QTL.predictor <- DAMB.var.effects$QTL.predictor
+  }
+
+  B.var.table <- MB.var.table <- DAMB.var.table <- matrix(NA, nrow=num.sim, ncol=6)
+  sim.data <- matrix(NA, nrow=nrow(Z), ncol=num.sim)
   for (i in 1:num.sim) {
     scaled.resid <- calc.scaled.residual(qtl.effect.size=qtl.effect.size, 
                                          strain.effect.size=strain.effect.size,
                                          n=nrow(this.locus.matrix))
-    this.denominator <- 
     sim.data[,i] <- QTL.predictor + strain.predictor + scaled.resid
-    var.table[i,] <- c(non.sample.var(2*beta), 
-                       non.sample.var(2*QTL.effect$M %*% beta),
-                       non.sample.var(D %*% t(full.to.add.matrix) %*% QTL.effect$M %*% beta),
-                       non.sample.var(this.locus.matrix %*% QTL.effect$M %*% beta),
-                       non.sample.var(2*beta)/(non.sample.var(2*beta) + non.sample.var(strain.predictor) + non.sample.var(scaled.resid)),
-                       non.sample.var(2*QTL.effect$M %*% beta)/(non.sample.var(2*QTL.effect$M %*% beta) + non.sample.var(strain.predictor) + non.sample.var(scaled.resid)),
-                       non.sample.var(D %*% t(full.to.add.matrix) %*% QTL.effect$M %*% beta)/(non.sample.var(D %*% t(full.to.add.matrix) %*% QTL.effect$M %*% beta) + non.sample.var(strain.predictor) + non.sample.var(scaled.resid)),
-                       non.sample.var(this.locus.matrix %*% QTL.effect$M %*% beta)/(non.sample.var(this.locus.matrix %*% QTL.effect$M %*% beta) + non.sample.var(strain.predictor) + non.sample.var(scaled.resid)))
+    B.var.table[i,] <- B.var.effects$summaries
+    MB.var.table[i,] <- MB.var.effects$summaries
+    DAMB.var.table[i,] <- DAMB.var.effects$summaries
   }
   
   colnames(sim.data) <- paste0("sim.y.", 1:ncol(sim.data))
   sim.data <- data.frame(sim.data, "SUBJECT.NAME"=rep(CC.lines, each=num.replicates))
-  colnames(var.table) <- c("B.effect", "MB.effect", "DAMB.effect", "ZDAMB.effect",
-                           "B.ve", "MB.ve", "DAMB.ve", "ZDAMB.ve")
+  colnames(B.var.table) <- colnames(MB.var.table) <- colnames(DAMB.var.table) <- c("B.effect", "MB.effect", "DAMB.effect",
+                                                                                   "B.ve", "MB.ve", "DAMB.ve")
   
   ## Taking residuals
   if (return.value == "fixef.resid") {
@@ -437,7 +432,7 @@ simulate.CC.qtl <- function(CC.lines,
     sim.data$sim.y.1 <- take.ranef.residuals(data=sim.data,
                                              locus.matrix=this.locus.matrix)
   }
-  if(return.means){
+  if (return.means) {
     sim.data <- apply(sim.data[,-ncol(sim.data), drop=FALSE], 2, function(x) tapply(x, INDEX=as.factor(rep(CC.lines, each=num.replicates)), FUN=mean))
     colnames(sim.data) <- paste0("sim.y.", 1:ncol(sim.data))
     sim.data <- data.frame(sim.data, "SUBJECT.NAME"=rownames(sim.data))
@@ -452,13 +447,52 @@ simulate.CC.qtl <- function(CC.lines,
                               impute=impute,
                               return.value=return.value,
                               return.means=return.means,
-                              var.table=var.table)))
+                              var.tables=list(B=B.var.table,
+                                              MB=MB.var.table,
+                                              DAMB=DAMB.var.table))))
 }
 
 non.sample.var <- function(x) {
   var.x <- var(x)*((length(x) - 1)/length(x))
   return(var.x)
 }
+
+## Draws and scales residuals in single function
+calc.scaled.residual <- function(qtl.effect.size, 
+                                 strain.effect.size, 
+                                 n){
+  
+  residual <- rnorm(n=n)
+  residual <- (residual - mean(residual))/sqrt(non.sample.var(residual))
+  residual <- as.vector(residual*sqrt(1 - qtl.effect.size - strain.effect.size))
+  return(residual)
+}
+
+calc.qtl.effect <- function(beta,
+                            M,
+                            A,
+                            D,
+                            Z,
+                            strain.effect.size,
+                            noise.effect.size) {
+  MB <- M %*% beta
+  DAMB <- D %*% A %*% MB
+  ZDAMB <- Z %*% DAMB
+  
+  B.effect <- non.sample.var(2*beta)
+  MB.effect <- non.sample.var(2*MB)
+  DAMB.effect <- non.sample.var(DAMB)
+  
+  summaries <- c(B.effect, MB.effect, DAMB.effect,
+                 B.effect/(B.effect + strain.effect.size + noise.effect.size),
+                 MB.effect/(MB.effect + strain.effect.size + noise.effect.size),
+                 DAMB.effect/(DAMB.effect + strain.effect.size + noise.effect.size))
+  names(summaries) <- c("B.effect", "MB.effect", "DAMB.effect",
+                        "B.ve", "MB.ve", "DAMB.ve")
+  return(list(QTL.predictor = ZDAMB,
+              summaries = summaries))
+}
+
 
 take.fixef.residuals <- function(data, locus.matrix, strain.matrix){
   locus.matrix <- locus.matrix[,-which.max(colSums(locus.matrix))]
@@ -495,18 +529,6 @@ take.ranef.residuals <- function(data, locus.matrix){
   return(these.residuals)
 }
 
-## Draws and scales residuals in single function
-calc.scaled.residual <- function(qtl.effect.size, 
-                                 strain.effect.size, 
-                                 n){
-
-  residual <- rnorm(n=n)
-  #residual <- as.vector(scale(residual))
-  residual <- (residual - mean(residual))/sqrt(non.sample.var(residual))
-  residual <- as.vector(residual*sqrt(1 - qtl.effect.size - strain.effect.size))
-  return(residual)
-}
-
 ## From Wes. Returns SDP matrix and QTL effects
 simulate.QTL.model.and.effects <- function(num.alleles=8, 
                                            num.founders=8, 
@@ -533,9 +555,7 @@ simulate.QTL.model.and.effects <- function(num.alleles=8,
   if(is.null(beta)){
     beta <- rnorm(num.alleles)
   }
-  #beta <- as.vector(scale(beta))
-  #beta <- as.vector(0.5*beta*sqrt(effect.var)) 
-  
+
   effect <- list(M=M, 
                  beta=beta)
   return(effect)
@@ -628,8 +648,8 @@ sim.data.effect.plot <- function(sim.data,
 
 #' @export
 sim.data.ve.plot <- function(sim.data,
-                             x.var=c("B.ve", "MB.ve", "DAMB.ve", "ZDAMB.ve"),
-                             y.var=c("MB.ve", "DAMB.ve", "ZDAMB.ve", "B.ve"),
+                             x.var=c("B.ve", "MB.ve", "DAMB.ve"),
+                             y.var=c("MB.ve", "DAMB.ve", "B.ve"),
                              qtl.col="red", title="") {
   x.var <- x.var[1]
   y.var <- y.var[1]
@@ -649,9 +669,9 @@ sim.data.ve.plot <- function(sim.data,
 
 #' @export
 sim.data.all.ve.plot <- function(sim.data,
-                                 x.var=c("B.ve", "MB.ve", "DAMB.ve", "ZDAMB.ve"),
+                                 x.var=c("B.ve", "MB.ve", "DAMB.ve"),
                                  include.types=c("B.ve", "MB.ve", "DAMB.ve"),
-                                 ve.col=c("#A6CEE3", "#B2DF8A", "#FB9A99", "#FDBF6F"), # alts #1F78B4 #33A02C #E31A1C #FF7F00
+                                 ve.col=c("#A6CEE3", "#B2DF8A", "#FB9A99"), # alts #1F78B4 #33A02C #E31A1C
                                  ve.pch=c(15, 17, 18, 19),
                                  qtl.col="red",
                                  transparency=0.5,
@@ -693,9 +713,9 @@ sim.data.all.ve.plot <- function(sim.data,
 
 #' @export
 sim.data.all.effect.plot <- function(sim.data,
-                                 x.var=c("B.effect", "MB.effect", "DAMB.effect", "ZDAMB.effect"),
+                                 x.var=c("B.effect", "MB.effect", "DAMB.effect"),
                                  include.types=c("B.effect", "MB.effect", "DAMB.effect"),
-                                 ve.col=c("#A6CEE3", "#B2DF8A", "#FB9A99", "#FDBF6F"), # alts #1F78B4 #33A02C #E31A1C #FF7F00
+                                 ve.col=c("#A6CEE3", "#B2DF8A", "#FB9A99"), # alts #1F78B4 #33A02C #E31A1C
                                  ve.pch=c(15, 17, 18, 19),
                                  qtl.col="red",
                                  transparency=0.5,
