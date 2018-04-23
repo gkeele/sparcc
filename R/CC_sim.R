@@ -784,6 +784,32 @@ pull.power <- function(sim.scans, thresh, window.mb=5){
   return(mean(map))
 }
 
+#' Calculate the probability of detecting any false QTL from SPARCC genome scans output from run.sim.scans()
+#'
+#' This function takes output genome scans from run.sim.scans() and calculates the probability that any false QTL 
+#' are detected. A window around the QTL can be specified to allow peaks not immediately at the simulated locus but likely
+#' tagging the QTL to also be excluded
+#'
+#' @param sim.scans Output simulated genome scans from run.sim.scans().
+#' @param thresh A list of threshold, calculated from get.gev.thresh(), that correspond to the scans in sim.scans. 
+#' @param window.mb DEFAULT: 5. Loci upstream and downstream the specified window.mb in Mb will also be checked 
+#' for statistically significant signals. Sometimes the statistical score will not pass at the simulated QTL, but
+#' does at nearby loci.
+#' @export
+#' @examples pull.false.positive.prob()
+pull.false.positive.prob <- function(sim.scans, thresh, window.mb=5){
+  map <- rep(NA, nrow(sim.scans$p.value))
+  total <- length(sim.scans$p.value)
+  for (i in 1:nrow(sim.scans$p.value)) {
+    this.index <- which(colnames(sim.scans$p.value) == sim.scans$locus[i])
+    this.chr <- sim.scans$chr[this.index]
+    this.pos <- sim.scans$pos$Mb[this.index]
+    p.value <- sim.scans$p.value[i, !(sim.scans$pos$Mb >= this.pos - window.mb & sim.scans$pos$Mb <= this.pos + window.mb & sim.scans$chr == this.chr)]
+    map[i] <- any(-log10(p.value) > thresh[i])
+  }
+  return(mean(map))
+}
+
 ## Produce SDP mapping matrix from SDP string
 model.matrix.from.ID <- function(M.ID){
   m <- as.numeric(unlist(strsplit(M.ID, ","))) + 1
