@@ -769,7 +769,7 @@ sim.data.all.effect.plot <- function(sim.data,
 #' @param window.mb DEFAULT: 5. Loci upstream and downstream the specified window.mb in Mb will also be checked 
 #' for statistically significant signals. Sometimes the statistical score will not pass at the simulated QTL, but
 #' does at nearby loci.
-#' @export
+#' @export pull.power
 #' @examples pull.power()
 pull.power <- function(sim.scans, thresh, window.mb=5){
   map <- rep(NA, nrow(sim.scans$p.value))
@@ -795,7 +795,7 @@ pull.power <- function(sim.scans, thresh, window.mb=5){
 #' @param window.mb DEFAULT: 5. Loci upstream and downstream the specified window.mb in Mb will also be checked 
 #' for statistically significant signals. Sometimes the statistical score will not pass at the simulated QTL, but
 #' does at nearby loci.
-#' @export
+#' @export pull.false.positive.prob
 #' @examples pull.false.positive.prob()
 pull.false.positive.prob <- function(sim.scans, thresh, window.mb=5){
   map <- rep(NA, nrow(sim.scans$p.value))
@@ -826,7 +826,7 @@ incidence.matrix <- function(fact){
   return(m)
 }
 
-#' @export
+#' @export extract.compact.qr
 extract.compact.qr <- function(genomecache, 
                                CC.lines.matrix,
                                use.progress.bar=TRUE){
@@ -854,7 +854,7 @@ extract.compact.qr <- function(genomecache,
   return(results)
 }
 
-#' @export
+#' @export pull.qr.from.compact
 pull.qr.from.compact <- function(compact.qr.list, 
                                  qr.index){
   
