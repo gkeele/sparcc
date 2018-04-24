@@ -792,19 +792,24 @@ pull.power <- function(sim.scans, thresh, window.mb=5){
 #'
 #' @param sim.scans Output simulated genome scans from run.sim.scans().
 #' @param thresh A list of threshold, calculated from get.gev.thresh(), that correspond to the scans in sim.scans. 
-#' @param window.mb DEFAULT: 5. Loci upstream and downstream the specified window.mb in Mb will also be checked 
+#' @param window.mb DEFAULT: "chromosome". Loci upstream and downstream the specified window.mb in Mb will also be checked 
 #' for statistically significant signals. Sometimes the statistical score will not pass at the simulated QTL, but
-#' does at nearby loci.
+#' does at nearby loci. "chromosome" results in only the consideration of signals from off-site chromosomes.
 #' @export pull.false.positive.prob
 #' @examples pull.false.positive.prob()
-pull.false.positive.prob <- function(sim.scans, thresh, window.mb=5){
+pull.false.positive.prob <- function(sim.scans, thresh, window.mb="chromosome"){
   map <- rep(NA, nrow(sim.scans$p.value))
   total <- length(sim.scans$p.value)
   for (i in 1:nrow(sim.scans$p.value)) {
     this.index <- which(colnames(sim.scans$p.value) == sim.scans$locus[i])
     this.chr <- sim.scans$chr[this.index]
-    this.pos <- sim.scans$pos$Mb[this.index]
-    p.value <- sim.scans$p.value[i, !(sim.scans$pos$Mb >= this.pos - window.mb & sim.scans$pos$Mb <= this.pos + window.mb & sim.scans$chr == this.chr)]
+    if (window.mb == "chromosome") {
+      p.value <- sim.scans$p.value[i, !(sim.scans$chr == this.chr)]
+    }
+    else {
+      this.pos <- sim.scans$pos$Mb[this.index]
+      p.value <- sim.scans$p.value[i, !(sim.scans$pos$Mb >= this.pos - window.mb & sim.scans$pos$Mb <= this.pos + window.mb & sim.scans$chr == this.chr)]
+    }
     map[i] <- any(-log10(p.value) > thresh[i])
   }
   return(mean(map))

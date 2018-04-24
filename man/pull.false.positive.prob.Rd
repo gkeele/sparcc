@@ -4,16 +4,17 @@
 \alias{pull.false.positive.prob}
 \title{Calculate the probability of detecting any false QTL from SPARCC genome scans output from run.sim.scans()}
 \usage{
-\method{pull}{false.positive.prob}(sim.scans, thresh, window.mb = 5)
+\method{pull}{false.positive.prob}(sim.scans, thresh,
+  window.mb = "chromosome")
 }
 \arguments{
 \item{sim.scans}{Output simulated genome scans from run.sim.scans().}
 
 \item{thresh}{A list of threshold, calculated from get.gev.thresh(), that correspond to the scans in sim.scans.}
 
-\item{window.mb}{DEFAULT: 5. Loci upstream and downstream the specified window.mb in Mb will also be checked 
+\item{window.mb}{DEFAULT: "chromosome". Loci upstream and downstream the specified window.mb in Mb will also be checked 
 for statistically significant signals. Sometimes the statistical score will not pass at the simulated QTL, but
-does at nearby loci.}
+does at nearby loci. "chromosome" results in only the consideration of signals from off-site chromosomes.}
 }
 \description{
 This function takes output genome scans from run.sim.scans() and calculates the probability that any false QTL 
