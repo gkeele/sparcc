@@ -189,6 +189,14 @@ sim.CC.data <- function(genomecache,
   original.effects <- list(qtl.effect.size=qtl.effect.size,
                            strain.effect.size=strain.effect.size)
   
+  ############ Scaling effects
+  noise.effect.size <- (1 - qtl.effect.size - strain.effect.size)
+  reduced.noise.effect.size <- noise.effect.size/num.replicates
+  s <- 1/min(c(qtl.effect.size, strain.effect.size, reduced.noise.effect.size)[c(qtl.effect.size, strain.effect.size, reduced.noise.effect.size) != 0])
+  qtl.effect.size <- s*qtl.effect.size
+  strain.effect.size <- s*strain.effect.size
+  noise.effect.size <- s*noise.effect.size
+  
   ## Sampling lines
   if (is.null(CC.lines)) {
     CC.lines <- sapply(1:ifelse(vary.lines, num.sim, 1), function(i) sample(x=h$getSubjects(), size=num.lines, replace=FALSE))
@@ -252,6 +260,7 @@ sim.CC.data <- function(genomecache,
                                 num.founders=num.founders,
                                 qtl.effect.size=qtl.effect.size, 
                                 strain.effect.size=strain.effect.size,
+                                noise.effect.size=noise.effect.size,
                                 impute=impute,
                                 scale.qtl.mode=scale.qtl.mode,
                                 locus.matrix=h$getLocusMatrix(locus=locus[locus.index[i]], model="full"),
@@ -304,6 +313,7 @@ simulate.CC.qtl <- function(CC.lines,
                             qtl.effect.size, 
                             beta=NULL,
                             strain.effect.size,
+                            noise.effect.size,
                             num.alleles=8, 
                             num.founders=8,
                             locus.matrix, 
@@ -368,7 +378,7 @@ simulate.CC.qtl <- function(CC.lines,
                                    D = D,
                                    Z = Z,
                                    strain.effect.size = strain.effect.size,
-                                   noise.effect.size = 1 - qtl.effect.size - strain.effect.size)
+                                   noise.effect.size = noise.effect.size)
   if (scale.qtl.mode == "B") {
     QTL.predictor <- B.var.effects$QTL.predictor
   }
@@ -381,7 +391,7 @@ simulate.CC.qtl <- function(CC.lines,
                                     D = D,
                                     Z = Z,
                                     strain.effect.size = strain.effect.size,
-                                    noise.effect.size = 1 - qtl.effect.size - strain.effect.size)
+                                    noise.effect.size = noise.effect.size)
   if (scale.qtl.mode == "MB") {
     QTL.predictor <- MB.var.effects$QTL.predictor
   }
@@ -400,7 +410,7 @@ simulate.CC.qtl <- function(CC.lines,
                                       D = D,
                                       Z = Z,
                                       strain.effect.size = strain.effect.size,
-                                      noise.effect.size = 1 - qtl.effect.size - strain.effect.size)
+                                      noise.effect.size = noise.effect.size)
   if (scale.qtl.mode == "DAMB") {
     QTL.predictor <- DAMB.var.effects$QTL.predictor
   }
@@ -408,8 +418,7 @@ simulate.CC.qtl <- function(CC.lines,
   B.var.table <- MB.var.table <- DAMB.var.table <- matrix(NA, nrow=num.sim, ncol=6)
   sim.data <- matrix(NA, nrow=nrow(Z), ncol=num.sim)
   for (i in 1:num.sim) {
-    scaled.resid <- calc.scaled.residual(qtl.effect.size=qtl.effect.size, 
-                                         strain.effect.size=strain.effect.size,
+    scaled.resid <- calc.scaled.residual(noise.effect.size=noise.effect.size,
                                          n=nrow(this.locus.matrix))
     sim.data[,i] <- QTL.predictor + strain.predictor + scaled.resid
     B.var.table[i,] <- B.var.effects$summaries
@@ -458,13 +467,10 @@ non.sample.var <- function(x) {
 }
 
 ## Draws and scales residuals in single function
-calc.scaled.residual <- function(qtl.effect.size, 
-                                 strain.effect.size, 
-                                 n){
-  
+calc.scaled.residual <- function(noise.effect.size, n){
   residual <- rnorm(n=n)
   residual <- (residual - mean(residual))/sqrt(non.sample.var(residual))
-  residual <- as.vector(residual*sqrt(1 - qtl.effect.size - strain.effect.size))
+  residual <- residual*sqrt(noise.effect.size)
   return(residual)
 }
 
@@ -494,7 +500,9 @@ calc.qtl.effect <- function(beta,
 }
 
 
-take.fixef.residuals <- function(data, locus.matrix, strain.matrix){
+take.fixef.residuals <- function(data, 
+                                 locus.matrix, 
+                                 strain.matrix){
   locus.matrix <- locus.matrix[,-which.max(colSums(locus.matrix))]
   rownames(locus.matrix) <- NULL
   colnames(locus.matrix) <- paste("allele", 1:ncol(locus.matrix), sep=".")
