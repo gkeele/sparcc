@@ -883,3 +883,17 @@ pull.qr.from.compact <- function(compact.qr.list,
                     formula=compact.qr.list$shared$formula)
   return(output.qr)
 }
+
+#' @export convert.qtl.effect.for.means
+convert.qtl.effect.for.means <- function(qtl.effect.size,
+                                        strain.effect.size=0,
+                                        num.replicates){
+  mean.noise.effect.size <- (1 - qtl.effect.size - strain.effect.size)/num.replicates
+  denominator <- sum(qtl.effect.size, strain.effect.size, mean.noise.effect.size)
+  mean.qtl.effect.size <- qtl.effect.size/denominator
+  mean.strain.effect.size <- strain.effect.size/denominator
+  results <- c(mean.qtl.effect.size, mean.strain.effect.size)
+  names(results) <- c("QTL", "strain")
+  return(results)
+}
+
