@@ -419,7 +419,7 @@ simulate.CC.qtl <- function(CC.lines,
   sim.data <- matrix(NA, nrow=nrow(Z), ncol=num.sim)
   for (i in 1:num.sim) {
     scaled.resid <- calc.scaled.residual(noise.effect.size=noise.effect.size,
-                                         n=nrow(this.locus.matrix))
+                                         n=nrow(Z))
     sim.data[,i] <- QTL.predictor + strain.predictor + scaled.resid
     B.var.table[i,] <- B.var.effects$summaries
     MB.var.table[i,] <- MB.var.effects$summaries
