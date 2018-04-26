@@ -384,7 +384,7 @@ simulate.CC.qtl <- function(CC.lines,
   }
   
   ### MB
-  var.ratio <- non.sample.var(2*M %*% beta)/non.sample.var(2*beta)
+  var.ratio <- c(non.sample.var(2*M %*% beta)/non.sample.var(2*beta))
   MB.var.effects <- calc.qtl.effect(beta = 0.5*beta*sqrt(qtl.effect.size)*sqrt(1/var.ratio),
                                     M = M,
                                     A = t(full.to.add.matrix),
@@ -397,7 +397,7 @@ simulate.CC.qtl <- function(CC.lines,
   }
   
   ### DAMB
-  var.ratio <- non.sample.var(D %*% t(full.to.add.matrix) %*% M %*% beta)/non.sample.var(2*beta)
+  var.ratio <- c(non.sample.var(D %*% t(full.to.add.matrix) %*% M %*% beta)/non.sample.var(2*beta))
   if (var.ratio != 0) { # Case when more than one allele is observed
     DAMB.beta <- 0.5*beta*sqrt(qtl.effect.size)*sqrt(1/var.ratio)
   }
@@ -886,8 +886,8 @@ pull.qr.from.compact <- function(compact.qr.list,
 
 #' @export convert.qtl.effect.for.means
 convert.qtl.effect.for.means <- function(qtl.effect.size,
-                                        strain.effect.size=0,
-                                        num.replicates){
+                                         strain.effect.size=0,
+                                         num.replicates){
   mean.noise.effect.size <- (1 - qtl.effect.size - strain.effect.size)/num.replicates
   denominator <- sum(qtl.effect.size, strain.effect.size, mean.noise.effect.size)
   mean.qtl.effect.size <- qtl.effect.size/denominator
