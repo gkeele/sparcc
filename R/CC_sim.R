@@ -787,7 +787,7 @@ pull.power <- function(sim.scans, thresh, window.mb=5){
     this.chr <- sim.scans$chr[this.index]
     this.pos <- sim.scans$pos$Mb[this.index]
     p.value <- sim.scans$p.value[i, sim.scans$pos$Mb >= this.pos - window.mb & sim.scans$pos$Mb <= this.pos + window.mb & sim.scans$chr == this.chr]
-    map[i] <- any(-log10(p.value) > thresh[i])
+    map[i] <- any(-log10(p.value) >= thresh[i])
   }
   return(mean(map))
 }
@@ -818,9 +818,42 @@ pull.false.positive.prob <- function(sim.scans, thresh, window.mb="chromosome"){
       this.pos <- sim.scans$pos$Mb[this.index]
       p.value <- sim.scans$p.value[i, !(sim.scans$pos$Mb >= this.pos - window.mb & sim.scans$pos$Mb <= this.pos + window.mb & sim.scans$chr == this.chr)]
     }
-    map[i] <- any(-log10(p.value) > thresh[i])
+    map[i] <- any(-log10(p.value) >= thresh[i])
   }
   return(mean(map))
+}
+
+#' Calculate the distance between the simulated QTL and the minimum p-value locus within a window around the simulated QTL, given
+#' a QTL was detected in the window from SPARCC genome scans output from run.sim.scans()
+#'
+#' This function takes output genome scans from run.sim.scans() and calculates the distance between the simulated QTL and the 
+#' minimum p-value locus within a window around the simulated QTL if a QTL was detected. The intent is to quantify the distribution
+#' of the position of max statistical signal from the simulated QTL position.
+#'
+#' @param sim.scans Output simulated genome scans from run.sim.scans().
+#' @param thresh A list of threshold, calculated from get.gev.thresh(), that correspond to the scans in sim.scans. 
+#' @param window.mb DEFAULT: 5. Loci upstream and downstream the specified window.mb in Mb will also be checked 
+#' for statistically significant signals. Sometimes the statistical score will not pass at the simulated QTL, but
+#' does at nearby loci. This is the region interrogated for signals greater than the simulated QTL.
+#' @export pull.dist.from.locus
+#' @examples pull.dist.from.locus()
+pull.dist.from.locus <- function(sim.scans, thresh, window.mb=5) {
+  map <- rep(NA, nrow(sim.scans$p.value))
+  total <- length(sim.scans$p.value)
+  for (i in 1:nrow(sim.scans$p.value)) {
+    this.index <- which(colnames(sim.scans$p.value) == sim.scans$locus[i])
+    this.chr <- sim.scans$chr[this.index]
+    this.pos <- sim.scans$pos$Mb[this.index]
+    p.value <- sim.scans$p.value[i, sim.scans$pos$Mb >= this.pos - window.mb & sim.scans$pos$Mb <= this.pos + window.mb & sim.scans$chr == this.chr]
+    pos <- sim.scans$pos$Mb[sim.scans$pos$Mb >= this.pos - window.mb & sim.scans$pos$Mb <= this.pos + window.mb & sim.scans$chr == this.chr]
+    if (any(-log10(p.value) >= thresh[i])) {
+      map[i] <- pos[which.min(p.value)] - this.pos
+    }
+    else {
+      map[i] <- NA
+    }
+  }
+  return(map)
 }
 
 ## Produce SDP mapping matrix from SDP string
