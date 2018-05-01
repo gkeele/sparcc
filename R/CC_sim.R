@@ -917,10 +917,10 @@ pull.qr.from.compact <- function(compact.qr.list,
   return(output.qr)
 }
 
-#' @export convert.qtl.effect.for.means
-convert.qtl.effect.for.means <- function(qtl.effect.size,
-                                         strain.effect.size=0,
-                                         num.replicates){
+#' @export convert.qtl.effect.to.means
+convert.qtl.effect.to.means <- function(qtl.effect.size,
+                                        strain.effect.size=0,
+                                        num.replicates){
   mean.noise.effect.size <- (1 - qtl.effect.size - strain.effect.size)/num.replicates
   denominator <- sum(qtl.effect.size, strain.effect.size, mean.noise.effect.size)
   mean.qtl.effect.size <- qtl.effect.size/denominator
@@ -929,4 +929,45 @@ convert.qtl.effect.for.means <- function(qtl.effect.size,
   names(results) <- c("QTL", "strain")
   return(results)
 }
+
+
+#' @export interpolate.qtl.power
+interpolate.qtl.power <- function(qtl.effect.sizes,
+                                  strain.effect.sizes=0,
+                                  num.replicates,
+                                  n.alleles,
+                                  use.window=TRUE,
+                                  n.strains,
+                                  r1.results) {
+  
+  if (length(strain.effect.sizes) == 1) { strain.effect.sizes <- rep(strain.effect.sizes, length(qtl.effect.sizes)) }
+  if (length(num.replicates) == 1) { num.replicates <- rep(num.replicates, length(qtl.effect.sizes)) }
+
+  r1.qtl.effect.sizes <- sapply(1:length(qtl.effect.sizes), function(x) convert.qtl.effect.to.means(qtl.effect.size=qtl.effect.sizes[x],
+                                                                                                    strain.effect.size=strain.effect.sizes[x],
+                                                                                                    num.replicates=num.replicates[x])["QTL"])
+  ## Processing evaluated power
+  power <- r1.results[r1.results$n.strains %in% n.strains & r1.results$n.alleles %in% n.alleles,]
+  if (use.window) { y <- power$power }
+  else { y <- power$power.window }
+  x <- power$h.qtl
+  
+  y <- c(0, y, 1)
+  x <- c(0, x, 1)
+
+  powers <- approx(x=x, y=y, xout=r1.qtl.effect.sizes)$y
+  return(powers)
+}
+
+### Issues because the system is additionally constrained to qtl.effect.size + strain.effect.size + noise.effect.size = 1
+# convert.qtl.effect.to.reps <- function(mean.qtl.effect.size,
+#                                        strain.effect.size=0,
+#                                        noise.effect.size,
+#                                        num.replicates){
+#   qtl.effect.size <- (mean.qtl.effect.size * (strain.effect.size + noise.effect.size/num.replicates))/(1 - mean.qtl.effect.size)
+#   results <- c(qtl.effect.size, strain.effect.size)
+#   names(results) <- c("QTL", "strain")
+#   return(results)
+# }
+
 
