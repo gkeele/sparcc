@@ -958,8 +958,8 @@ interpolate.qtl.power <- function(r1.results,
   return(powers)
 }
 
-#' @export interpolate.qtl.power.table
-interpolate.qtl.power.table <- function(r1.results,
+#' @export interpolate.table
+interpolate.table <- function(r1.results,
                                         num.replicates,
                                         n.alleles,
                                         use.window=TRUE) {
@@ -1003,7 +1003,7 @@ binomial.prop.ci <- function(p, n.sims=1000, alpha=0.05){
 power.plot <- function(results,
                        qtl.effect.size,
                        n.alleles,
-                       col="#FB9A99",
+                       col="firebrick3",
                        pch=20,
                        ...) {
   results[,c("lower", "upper")] <- t(sapply(results$power, binomial.prop.ci))
@@ -1020,7 +1020,7 @@ power.plot <- function(results,
 add.curve.to.power.plot <- function(results,
                                     qtl.effect.size,
                                     n.alleles,
-                                    col="#FB9A99",
+                                    col="skyblue",
                                     pch=1,
                                     ...) {
   results[,c("lower", "upper")] <- t(sapply(results$power, binomial.prop.ci))
