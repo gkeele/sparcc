@@ -959,6 +959,20 @@ interpolate.qtl.power <- function(qtl.effect.sizes,
   return(powers)
 }
 
+#function for curve point confidence interval using binomial with jeffery's prior
+#' @export binomial.prop.ci
+binomial.prop.ci <- function(p, n.sims=1000, alpha=0.05){
+  ci.lower <- qbeta(0.5*alpha, p*n.sims+0.5, (1-p)*n.sims+0.5)
+  ci <- c(ci.lower, qbeta(1-0.5*alpha, p*n.sims+0.5, (1-p)*n.sims+0.5))
+  
+  if (p==0){
+    ci[1] <- 0
+  } else if (p==1){
+    ci[2] <- 1
+  }
+  return(ci)
+}
+
 ### Issues because the system is additionally constrained to qtl.effect.size + strain.effect.size + noise.effect.size = 1
 # convert.qtl.effect.to.reps <- function(mean.qtl.effect.size,
 #                                        strain.effect.size=0,
