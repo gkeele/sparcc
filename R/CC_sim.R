@@ -942,10 +942,9 @@ interpolate.qtl.power <- function(r1.results,
   
   if (length(strain.effect.sizes) == 1) { strain.effect.sizes <- rep(strain.effect.sizes, length(qtl.effect.sizes)) }
   if (length(num.replicates) == 1) { num.replicates <- rep(num.replicates, length(qtl.effect.sizes)) }
-
   r1.qtl.effect.sizes <- sapply(1:length(qtl.effect.sizes), function(x) convert.qtl.effect.to.means(qtl.effect.size=qtl.effect.sizes[x],
-                                                                                                 strain.effect.size=strain.effect.sizes[x],
-                                                                                                 num.replicates=num.replicates[x])["QTL"])
+                                                                                                    strain.effect.size=strain.effect.sizes[x],
+                                                                                                    num.replicates=num.replicates[x])["QTL"])
   ## Processing evaluated power
   power <- r1.results[r1.results$n.strains %in% n.strains & r1.results$n.alleles %in% n.alleles,]
   if (use.window) { y <- power$power }
@@ -969,13 +968,13 @@ interpolate.qtl.power.table <- function(r1.results,
   strain.effect.size <- unique(r1.results$h.strain)
   final.data <- NULL
   for(i in 1:length(n.strains)) {
-    temp <- sapply(1:length(num.replicates), function(x) interpolate.qtl.power(qtl.effect.sizes=qtl.effect.size,
+    temp <- sapply(1:length(num.replicates), function(x) interpolate.qtl.power(r1.results=r1.results,
+                                                                               qtl.effect.sizes=qtl.effect.size,
                                                                                strain.effect.size=strain.effect.size,
-                                                                               num.replicates=x,
+                                                                               num.replicates=num.replicates[x],
                                                                                n.alleles=n.alleles,
                                                                                use.window=TRUE,
-                                                                               n.strains=n.strains[i], 
-                                                                               r1.results=r1.results))
+                                                                               n.strains=n.strains[i]))
     rownames(temp) <- qtl.effect.size
     colnames(temp) <- num.replicates
     temp.data <- reshape2::melt(temp)
