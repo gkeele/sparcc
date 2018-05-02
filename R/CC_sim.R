@@ -932,20 +932,20 @@ convert.qtl.effect.to.means <- function(qtl.effect.size,
 
 
 #' @export interpolate.qtl.power
-interpolate.qtl.power <- function(qtl.effect.sizes,
+interpolate.qtl.power <- function(r1.results,
+                                  qtl.effect.sizes,
                                   strain.effect.sizes=0,
                                   num.replicates,
                                   n.alleles,
                                   use.window=TRUE,
-                                  n.strains,
-                                  r1.results) {
+                                  n.strains) {
   
   if (length(strain.effect.sizes) == 1) { strain.effect.sizes <- rep(strain.effect.sizes, length(qtl.effect.sizes)) }
   if (length(num.replicates) == 1) { num.replicates <- rep(num.replicates, length(qtl.effect.sizes)) }
 
   r1.qtl.effect.sizes <- sapply(1:length(qtl.effect.sizes), function(x) convert.qtl.effect.to.means(qtl.effect.size=qtl.effect.sizes[x],
-                                                                                                    strain.effect.size=strain.effect.sizes[x],
-                                                                                                    num.replicates=num.replicates[x])["QTL"])
+                                                                                                 strain.effect.size=strain.effect.sizes[x],
+                                                                                                 num.replicates=num.replicates[x])["QTL"])
   ## Processing evaluated power
   power <- r1.results[r1.results$n.strains %in% n.strains & r1.results$n.alleles %in% n.alleles,]
   if (use.window) { y <- power$power }
@@ -957,6 +957,33 @@ interpolate.qtl.power <- function(qtl.effect.sizes,
 
   powers <- approx(x=x, y=y, xout=r1.qtl.effect.sizes)$y
   return(powers)
+}
+
+#' @export interpolate.qtl.power.grid
+interpolate.qtl.power.table <- function(r1.results,
+                                        num.replicates,
+                                        n.alleles,
+                                        use.window=TRUE) {
+  qtl.effect.size <- unique(r1.results$h.qtl)
+  n.strains <- unique(r1.results$n.strains)
+  strain.effect.size <- unique(r1.results$h.strain)
+  final.data <- NULL
+  for(i in 1:length(n.strains)) {
+    temp <- sapply(1:length(num.replicates), function(x) interpolate.qtl.power(qtl.effect.sizes=qtl.effect.size,
+                                                                               strain.effect.size=strain.effect.size,
+                                                                               num.replicates=x,
+                                                                               n.alleles=n.alleles,
+                                                                               use.window=TRUE,
+                                                                               n.strains=n.strains[i], 
+                                                                               r1.results=r1.results))
+    rownames(temp) <- qtl.effect.size
+    colnames(temp) <- num.replicates
+    temp.data <- reshape2::melt(temp)
+    temp.data <- cbind(rep(n.strains[i], nrow(temp.data)), rep(n.alleles, nrow(temp.data)), temp.data)
+    names(temp.data) <- c("n.strains", "n.alleles", "h.qtl", "n.replicates", "power")
+    final.data <- rbind(final.data, temp.data)
+  } 
+  return(final.data)
 }
 
 #function for curve point confidence interval using binomial with jeffery's prior
@@ -971,6 +998,38 @@ binomial.prop.ci <- function(p, n.sims=1000, alpha=0.05){
     ci[2] <- 1
   }
   return(ci)
+}
+
+#' @export power.plot
+power.plot <- function(results,
+                       qtl.effect.size,
+                       n.alleles,
+                       col="#FB9A99",
+                       pch=20,
+                       ...) {
+  results[,c("lower", "upper")] <- t(sapply(results$power, binomial.prop.ci))
+  plot(c(), c(), ylim=c(0,1), xlim=c(10,72), las=1, xlab="Number of strains", ylab = "Power", frame.plot=FALSE)
+  data.subset <- results[results$n.replicates == 1 & results$n.alleles %in% n.alleles & results$h.qtl %in% qtl.effect.size,]
+  polygon(c(data.subset$n.strains, rev(data.subset$n.strains)), 
+          c(data.subset$lower,rev(data.subset$upper)), 
+          col=scales::alpha(col, alpha=0.4), density=NA)
+  lines(data.subset$n.strains, data.subset$power, col=col, lwd=2, lend=1, type="b", cex=0.8, pch=pch, ...)
+}
+
+
+#' @export add.curve.to.power.plot
+add.curve.to.power.plot <- function(results,
+                                    qtl.effect.size,
+                                    n.alleles,
+                                    col="#FB9A99",
+                                    pch=1,
+                                    ...) {
+  results[,c("lower", "upper")] <- t(sapply(results$power, binomial.prop.ci))
+  data.subset <- results[results$n.alleles %in% n.alleles & results$h.qtl %in% qtl.effect.size,]
+  polygon(c(data.subset$n.strains, rev(data.subset$n.strains)), 
+          c(data.subset$lower,rev(data.subset$upper)), 
+          col=scales::alpha(col, alpha=0.4), density=NA)
+  lines(data.subset$n.strains, data.subset$power, col=col, lwd=2, lend=1, type="b", cex=0.8, pch=pch,  ...)
 }
 
 ### Issues because the system is additionally constrained to qtl.effect.size + strain.effect.size + noise.effect.size = 1
