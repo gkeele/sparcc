@@ -959,7 +959,7 @@ interpolate.qtl.power <- function(r1.results,
   return(powers)
 }
 
-#' @export interpolate.qtl.power.grid
+#' @export interpolate.qtl.power.table
 interpolate.qtl.power.table <- function(r1.results,
                                         num.replicates,
                                         n.alleles,
