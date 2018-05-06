@@ -1007,15 +1007,15 @@ power.plot <- function(results,
                        col="firebrick3",
                        pch=20,
                        use.window=TRUE,
-                       ...) {
+                       alpha=0.7) {
   n.replicates <- ifelse(is.null(n.replicates), results$n.replicates[1], n.replicates)
   results[,c("lower", "upper")] <- t(sapply(results[,ifelse(use.window, "power.window", "power")], binomial.prop.ci))
   plot(c(), c(), ylim=c(0,1), xlim=c(10,72), las=1, xlab="Number of strains", ylab = "Power", frame.plot=FALSE)
   data.subset <- results[results$n.replicates %in% n.replicates & results$n.alleles %in% n.alleles & results$h.qtl %in% qtl.effect.size,]
   polygon(c(data.subset$n.strains, rev(data.subset$n.strains)), 
           c(data.subset$lower,rev(data.subset$upper)), 
-          col=scales::alpha(col, alpha=0.7), density=NA)
-  lines(data.subset$n.strains, data.subset[,ifelse(use.window, "power.window", "power")], col="black", lwd=1.5, lend=1, type="b", cex=0.8, pch=pch, ...)
+          col=scales::alpha(col, alpha=alpha), density=NA)
+  lines(data.subset$n.strains, data.subset[,ifelse(use.window, "power.window", "power")], col="black", lwd=1.5, lend=1, type="b", cex=0.8, pch=pch)
 }
 
 
@@ -1027,15 +1027,52 @@ add.curve.to.power.plot <- function(results,
                                     col="skyblue",
                                     pch=1,
                                     use.window=TRUE,
-                                    ...) {
+                                    alpha=0.7) {
   n.replicates <- ifelse(is.null(n.replicates), results$n.replicates[1], n.replicates)
   results[,c("lower", "upper")] <- t(sapply(results[,ifelse(use.window, "power.window", "power")], binomial.prop.ci))
   data.subset <- results[results$n.replicates %in% n.replicates & results$n.alleles %in% n.alleles & results$h.qtl %in% qtl.effect.size,]
   polygon(c(data.subset$n.strains, rev(data.subset$n.strains)), 
           c(data.subset$lower,rev(data.subset$upper)), 
-          col=scales::alpha(col, alpha=0.7), density=NA)
-  lines(data.subset$n.strains, data.subset[,ifelse(use.window, "power.window", "power")], col="black", lwd=1.5, lend=1, type="b", cex=0.8, pch=pch,  ...)
+          col=scales::alpha(col, alpha=alpha), density=NA)
+  lines(data.subset$n.strains, data.subset[,ifelse(use.window, "power.window", "power")], col="black", lwd=1.5, lend=1, type="b", cex=0.8, pch=pch)
 }
+
+#' @export fpp.plot
+fpp.plot <- function(results,
+                       qtl.effect.size,
+                       n.alleles,
+                       n.replicates=NULL,
+                       col="firebrick3",
+                       pch=20,
+                       alpha=0.7) {
+  n.replicates <- ifelse(is.null(n.replicates), results$n.replicates[1], n.replicates)
+  results[,c("lower", "upper")] <- t(sapply(results$false, binomial.prop.ci))
+  plot(c(), c(), ylim=c(0,1), xlim=c(10,72), las=1, xlab="Number of strains", ylab = "False positive probability", frame.plot=FALSE)
+  data.subset <- results[results$n.replicates %in% n.replicates & results$n.alleles %in% n.alleles & results$h.qtl %in% qtl.effect.size,]
+  polygon(c(data.subset$n.strains, rev(data.subset$n.strains)), 
+          c(data.subset$lower,rev(data.subset$upper)), 
+          col=scales::alpha(col, alpha=alpha), density=NA)
+  lines(data.subset$n.strains, data.subset$false, col="black", lwd=1.5, lend=1, type="b", cex=0.8, pch=pch)
+}
+
+
+#' @export add.curve.to.fpp.plot
+add.curve.to.fpp.plot <- function(results,
+                                    qtl.effect.size,
+                                    n.alleles,
+                                    n.replicates=NULL,
+                                    col="skyblue",
+                                    pch=1,
+                                    alpha=0.7) {
+  n.replicates <- ifelse(is.null(n.replicates), results$n.replicates[1], n.replicates)
+  results[,c("lower", "upper")] <- t(sapply(results$false, binomial.prop.ci))
+  data.subset <- results[results$n.replicates %in% n.replicates & results$n.alleles %in% n.alleles & results$h.qtl %in% qtl.effect.size,]
+  polygon(c(data.subset$n.strains, rev(data.subset$n.strains)), 
+          c(data.subset$lower,rev(data.subset$upper)), 
+          col=scales::alpha(col, alpha=alpha), density=NA)
+  lines(data.subset$n.strains, data.subset$false, col="black", lwd=1.5, lend=1, type="b", cex=0.8, pch=pch)
+}
+
 
 ### Issues because the system is additionally constrained to qtl.effect.size + strain.effect.size + noise.effect.size = 1
 # convert.qtl.effect.to.reps <- function(mean.qtl.effect.size,
