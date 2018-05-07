@@ -120,10 +120,10 @@ run.perm.scans <- function(perm.matrix,
       perm.data[,1] <- data[perm.matrix[,scan.index[j]], 1]
       names(perm.data) <- c("perm_y", "SUBJECT.NAME")
       
-      this.scan <- miqtl::scan.qr(qr.object=this.qr, data=perm.data, 
-                                  phenotype="perm_y", chr=chr,
-                                  return.allele.effects=FALSE, use.progress.bar=use.progress.bar,
-                                  ...)
+      this.scan <- scan.qr(qr.object=this.qr, data=perm.data, 
+                           phenotype="perm_y", chr=chr,
+                           return.allele.effects=FALSE, use.progress.bar=use.progress.bar,
+                           ...)
 
       min.p[i,j] <-  min(this.scan$p.value)
       if(print.scans.progress){

@@ -13,7 +13,7 @@
 #' @param print.scans.progress DEFAULT: FALSE. Specifies whether to output a message that indicates the number of
 #' scans completed.
 #' @param all.sim.qr DEFAULT: NULL. If NULL, necessary qr decompositions are performed, which will slow down
-#' the function significantly. If non-NULL, it expects either output from miqtl::extract.qr for a single sample
+#' the function significantly. If non-NULL, it expects either output from extract.qr for a single sample
 #' of CC lines, or a list of output for multiple samples.
 #' @param return.all.sim.qr DEFAULT: TRUE. Saves the qr decompositions for later use, though will make output
 #' substantially larger. Could then be used for later scans with the same set of CC lines.
@@ -32,7 +32,7 @@ run.sim.scans <- function(sim.data,
   if(is.null(scan.index)){ 
     scan.index <- 1:sum(grepl("sim.y", colnames(sim.data$data)))
   }
-  h <- miqtl::DiploprobReader$new(sim.data$genomecache)
+  h <- DiploprobReader$new(sim.data$genomecache)
   loci <- h$getLoci()
   loci.chr <- h$getChromOfLocus(loci)
   if(chr[1] != "all"){
@@ -50,11 +50,11 @@ run.sim.scans <- function(sim.data,
   
   if(!sim.data$properties$vary.lines){
     if(is.null(all.sim.qr)){
-      this.qr <- miqtl::extract.qr(genomecache=sim.data$genomecache, model="additive",
-                                   formula=~1, data=sim.data$data, 
-                                   id="SUBJECT.NAME.1",
-                                   just.these.loci=just.these.loci, chr=chr,
-                                   use.progress.bar=use.progress.bar)
+      this.qr <- extract.qr(genomecache=sim.data$genomecache, model="additive",
+                            formula=~1, data=sim.data$data, 
+                            id="SUBJECT.NAME.1",
+                            just.these.loci=just.these.loci, chr=chr,
+                            use.progress.bar=use.progress.bar)
     }
     else{
       this.qr <- all.sim.qr
@@ -66,11 +66,11 @@ run.sim.scans <- function(sim.data,
   for (i in 1:length(scan.index)) {
     if (sim.data$properties$vary.lines) {
       if (compute.qr.boolean) {
-        this.qr <- miqtl::extract.qr(genomecache=sim.data$genomecache, model="additive",
-                                     formula=~1, data=sim.data$data,
-                                     id=paste0("SUBJECT.NAME.", i),
-                                     just.these.loci=just.these.loci, chr=chr,
-                                     use.progress.bar=use.progress.bar)
+        this.qr <- extract.qr(genomecache=sim.data$genomecache, model="additive",
+                              formula=~1, data=sim.data$data,
+                              id=paste0("SUBJECT.NAME.", i),
+                              just.these.loci=just.these.loci, chr=chr,
+                              use.progress.bar=use.progress.bar)
       }
       else{
         this.qr <- pull.qr.from.compact(compact.qr.list=all.sim.qr, 
@@ -78,10 +78,10 @@ run.sim.scans <- function(sim.data,
       }
       this.id <- paste0("SUBJECT.NAME.", i)
     }
-    this.scan <- miqtl::scan.qr(qr.object=this.qr, data=sim.data$data, 
-                                phenotype=paste0("sim.y.", i), id=this.id, chr=chr, 
-                                return.allele.effects=FALSE, use.progress.bar=use.progress.bar,
-                                ...)
+    this.scan <- scan.qr(qr.object=this.qr, data=sim.data$data, 
+                         phenotype=paste0("sim.y.", i), id=this.id, chr=chr, 
+                         return.allele.effects=FALSE, use.progress.bar=use.progress.bar,
+                         ...)
     full.p[i,] <- this.scan$p.value
     if (return.all.sim.qr & sim.data$properties$vary.lines) { all.sim.qr[[i]] <- this.qr }
     else if (return.all.sim.qr & !sim.data$properties$vary.lines) { all.sim.qr <- this.qr }
@@ -181,7 +181,7 @@ sim.CC.data <- function(genomecache,
                         return.value=c("raw", "fixef.resid", "ranef.resid"),
                         return.means=TRUE){
   
-  h <- miqtl::DiploprobReader$new(genomecache)
+  h <- DiploprobReader$new(genomecache)
   scale.qtl.mode <- scale.qtl.mode[1]
   return.value <- return.value[1]
   sample.as.method <- sample.as.method[1]
@@ -336,7 +336,7 @@ simulate.CC.qtl <- function(CC.lines,
   D <- this.locus.matrix ## Saved for variance calculations
   ZD <- D[rep(1:length(CC.lines), each=num.replicates),]
   
-  full.to.add.matrix <- t(miqtl::straineff.mapping.matrix(M=num.founders))
+  full.to.add.matrix <- t(straineff.mapping.matrix(M=num.founders))
   
   ## Strain
   Z <- incidence.matrix(factor(CC.lines, levels=CC.lines))
@@ -569,293 +569,6 @@ simulate.QTL.model.and.effects <- function(num.alleles=8,
   return(effect)
 }
 
-#' Plots a single simulated scan. Built on miqtl::genome.plotter.whole()
-#'
-#' This function takes the output from run.sim.scans(), and plots a single genome scane of a simulated phenotype.
-#'
-#' @param sim.scans Genome scans of simulated data, output by run.sim.scans().
-#' @param phenotype.index DEFAULT: 1. The index of the simulated phenotype to plot. Cannot exceed the number of 
-#' phenotypes contained in sim.scans.
-#' @param scale DEFAULT: "Mb". The scale in which to plot genomic position. "cM" is the other option.
-#' @param thresh DEFAULT: NULL. If NULL, no significance is threshold is plotted. Expects a numeric value, commonly
-#' output from get.gev.thresholds() based on permutation scans.
-#' @export
-#' @examples single.sim.plot()
-single.sim.plot <- function(sim.scans, 
-                            phenotype.index=1, 
-                            scale=c("Mb", "cM"), 
-                            thresh=NULL, 
-                            ...){
-  
-  scale <- scale[1]
-  dummy.scan <- sim.scans
-  if(is.matrix(dummy.scan$p.value)){
-    dummy.scan$p.value <- sim.scans$p.value[phenotype.index,]
-  }
-  else{
-    dummy.scan$p.value <- sim.scans$p.value
-  }
-  dummy.scan$p.value[dummy.scan$p.value == 0] <- .Machine$double.xmin
-  
-  if(length(sim.scans$locus) > 1){
-    locus <- sim.scans$locus[phenotype.index]
-  }
-  else{
-    locus <- sim.scans$locus
-  }
-  
-  outcome.type <- NULL
-  if (sim.scans$properties$return.value != "raw") { outcome.type <- sim.scans$properties$return.value }
-  
-  if (!is.null(sim.scans$properties$strain.reduction.fraction)) { 
-    effect.title <- paste(paste0("QTL=",  sim.scans$properties$qtl.effect.size*100, "%"),
-                          paste0("Strain=", sim.scans$properties$strain.effect.size*100, "%"),
-                          paste0("Strain reduction=", round(sim.scans$properties$strain.reduction.fraction*100, 2), "%"),
-                          sep=", ")
-  } 
-  else {
-    effect.title <- paste(paste0("QTL=",  sim.scans$properties$qtl.effect.size*100, "%"),
-                          paste0("Strain=", sim.scans$properties$strain.effect.size*100, "%"),
-                          sep=", ")
-  }
-  
-  this.title <- c(paste(outcome.type, 
-                        ifelse(sim.scans$properties$return.means, "means:", "replicates:"),
-                        effect.title),
-                  paste(ifelse(sim.scans$properties$impute, "Impute", "ROP"), "sim,",
-                        sim.scans$properties$num.alleles, "functional alleles,",
-                        sim.scans$properties$num.lines, "lines,",
-                        sim.scans$properties$num.replicates, ifelse(sim.scans$properties$num.replicates == 1, "replicate", "replicates")))
-  genome.plotter.whole(scan.list=list(dummy.scan), override.title=this.title, distinguish.chr.type="color",
-                       scale=scale, mark.locus=locus, hard.thresholds=thresh[phenotype.index], ...)
-}
-
-#' @export
-sim.data.effect.plot <- function(sim.data,
-                             x.var=c("B.effect", "MB.effect", "DAMB.effect", "ZDAMB.effect"),
-                             y.var=c("MB.effect", "DAMB.effect", "ZDAMB.effect", "B.effect"),
-                             qtl.col="red", title="") {
-  x.var <- x.var[1]
-  y.var <- y.var[1]
-  nominal.effect.size <- sim.data$properties$qtl.effect.size
-  var.table <- sim.data$properties$var.table
-  
-  x.val <- var.table[,x.var]
-  y.val <- var.table[,y.var]
-  
-  x.max <- max(x.val, nominal.effect.size)
-  y.max <- max(y.val, nominal.effect.size)
-  
-  plot(x.val, y.val,
-       xlab=x.var, ylab=y.var, xlim=c(0, x.max), ylim=c(0, y.max),
-       frame.plot=FALSE, pch=20, las=1, main=title)
-  abline(0, 1, lty=3)
-  abline(v=nominal.effect.size, lty=2, col=qtl.col)
-  abline(h=nominal.effect.size, lty=2, col=qtl.col)
-}
-
-#' @export
-sim.data.ve.plot <- function(sim.data,
-                             x.var=c("B.ve", "MB.ve", "DAMB.ve"),
-                             y.var=c("MB.ve", "DAMB.ve", "B.ve"),
-                             qtl.col="red", title="") {
-  x.var <- x.var[1]
-  y.var <- y.var[1]
-  nominal.effect.size <- sim.data$properties$qtl.effect.size
-  var.table <- sim.data$properties$var.table
-  
-  x.val <- var.table[,x.var]
-  y.val <- var.table[,y.var]
-  
-  plot(x.val, y.val,
-       xlab=x.var, ylab=y.var, xlim=c(0, 1), ylim=c(0, 1),
-       frame.plot=FALSE, pch=20, las=1, main=title)
-  abline(0, 1, lty=3)
-  abline(v=nominal.effect.size, lty=2, col=qtl.col)
-  abline(h=nominal.effect.size, lty=2, col=qtl.col)
-}
-
-#' @export
-sim.data.all.ve.plot <- function(sim.data,
-                                 x.var=c("B.ve", "MB.ve", "DAMB.ve"),
-                                 include.types=c("B.ve", "MB.ve", "DAMB.ve"),
-                                 ve.col=c("#A6CEE3", "#B2DF8A", "#FB9A99"), # alts #1F78B4 #33A02C #E31A1C
-                                 ve.pch=c(15, 17, 18, 19),
-                                 qtl.col="red",
-                                 transparency=0.5,
-                                 legend.pos="topleft",
-                                 title="") {
-  x.var <- x.var[1]
-  nominal.effect.size <- sim.data$properties$qtl.effect.size
-  original.types <- colnames(sim.data$properties$var.table)[grep(x=colnames(sim.data$properties$var.table), pattern="ve")]
-
-  var.table <- sim.data$properties$var.table[,unique(c(x.var, include.types))]
-  
-  ve.col <- c(scales::alpha(ve.col[1], transparency),
-              scales::alpha(ve.col[2], transparency),
-              scales::alpha(ve.col[3], transparency),
-              scales::alpha(ve.col[4], transparency))
-  ve.col <- ve.col[original.types %in% include.types]
-  ve.pch <- ve.pch[original.types %in% include.types]
-  
-  x.val <- var.table[,x.var]
-  keep <- !(colnames(var.table) %in% x.var)
-  y.tab <- var.table[,keep]
-  ve.col <- ve.col[keep]
-  ve.pch <- ve.pch[keep]
-  
-  plot(x.val, y.tab[,ncol(y.tab)],
-       xlab=x.var, ylab="Proportion of variance", xlim=c(0, 1), ylim=c(0, 1),
-       frame.plot=FALSE, pch=ve.pch[ncol(y.tab)], las=1, col=ve.col[ncol(y.tab)], cex=1.5, main=title)
-  if (ncol(y.tab) > 1) {
-    for (i in rev(2:ncol(y.tab)-1)) {
-      points(x.val, y.tab[,i], col=ve.col[i], pch=ve.pch[i], cex=1.5)
-    }
-  }
-  abline(0, 1, lty=3)
-  abline(v=nominal.effect.size, lty=2, col=qtl.col)
-  abline(h=nominal.effect.size, lty=2, col=qtl.col)
-  
-  legend(legend.pos, legend=colnames(y.tab), col=ve.col, pch=ve.pch, cex=1.5, bty="n")
-}
-
-#' @export
-sim.data.all.effect.plot <- function(sim.data,
-                                 x.var=c("B.effect", "MB.effect", "DAMB.effect"),
-                                 include.types=c("B.effect", "MB.effect", "DAMB.effect"),
-                                 ve.col=c("#A6CEE3", "#B2DF8A", "#FB9A99"), # alts #1F78B4 #33A02C #E31A1C
-                                 ve.pch=c(15, 17, 18, 19),
-                                 qtl.col="red",
-                                 transparency=0.5,
-                                 legend.pos="topleft",
-                                 title="") {
-  x.var <- x.var[1]
-  nominal.effect.size <- sim.data$properties$qtl.effect.size
-  original.types <- colnames(sim.data$properties$var.table)[grep(x=colnames(sim.data$properties$var.table), pattern="effect")]
-  
-  var.table <- sim.data$properties$var.table[,unique(c(x.var, include.types))]
-  
-  ve.col <- c(scales::alpha(ve.col[1], transparency),
-              scales::alpha(ve.col[2], transparency),
-              scales::alpha(ve.col[3], transparency),
-              scales::alpha(ve.col[4], transparency))
-  ve.col <- ve.col[original.types %in% include.types]
-  ve.pch <- ve.pch[original.types %in% include.types]
-  
-  x.val <- var.table[,x.var]
-  keep <- !(colnames(var.table) %in% x.var)
-  y.tab <- var.table[,keep]
-  ve.col <- ve.col[keep]
-  ve.pch <- ve.pch[keep]
-  
-  x.max <- max(x.val, nominal.effect.size)
-  y.max <- max(y.tab, nominal.effect.size)
-  
-  plot(x.val, y.tab[,ncol(y.tab)],
-       xlab=x.var, ylab="Proportion of variance", xlim=c(0, x.max), ylim=c(0, y.max),
-       frame.plot=FALSE, pch=ve.pch[ncol(y.tab)], las=1, col=ve.col[ncol(y.tab)], cex=1.5, main=title)
-  if (ncol(y.tab) > 1) {
-    for (i in rev(2:ncol(y.tab)-1)) {
-      points(x.val, y.tab[,i], col=ve.col[i], pch=ve.pch[i], cex=1.5)
-    }
-  }
-  abline(0, 1, lty=3)
-  abline(v=nominal.effect.size, lty=2, col=qtl.col)
-  abline(h=nominal.effect.size, lty=2, col=qtl.col)
-  
-  legend(legend.pos, legend=colnames(y.tab), col=ve.col, pch=ve.pch, cex=1.5, bty="n")
-}
-
-#' Calculate the QTL mapping power from SPARCC genome scans output from run.sim.scans()
-#'
-#' This function takes output genome scans from run.sim.scans() and calculates the power to map the simulated
-#' QTL. A window around the QTL can be specified to allow peaks not immediately at the simulated locus but likely
-#' tagging the QTL to also be included.
-#'
-#' @param sim.scans Output simulated genome scans from run.sim.scans().
-#' @param thresh A list of threshold, calculated from get.gev.thresh(), that correspond to the scans in sim.scans. 
-#' @param window.mb DEFAULT: 5. Loci upstream and downstream the specified window.mb in Mb will also be checked 
-#' for statistically significant signals. Sometimes the statistical score will not pass at the simulated QTL, but
-#' does at nearby loci.
-#' @export pull.power
-#' @examples pull.power()
-pull.power <- function(sim.scans, thresh, window.mb=5){
-  map <- rep(NA, nrow(sim.scans$p.value))
-  total <- length(sim.scans$p.value)
-  for (i in 1:nrow(sim.scans$p.value)) {
-    this.index <- which(colnames(sim.scans$p.value) == sim.scans$locus[i])
-    this.chr <- sim.scans$chr[this.index]
-    this.pos <- sim.scans$pos$Mb[this.index]
-    p.value <- sim.scans$p.value[i, sim.scans$pos$Mb >= this.pos - window.mb & sim.scans$pos$Mb <= this.pos + window.mb & sim.scans$chr == this.chr]
-    map[i] <- any(-log10(p.value) >= thresh[i])
-  }
-  return(mean(map))
-}
-
-#' Calculate the probability of detecting any false QTL from SPARCC genome scans output from run.sim.scans()
-#'
-#' This function takes output genome scans from run.sim.scans() and calculates the probability that any false QTL 
-#' are detected. A window around the QTL can be specified to allow peaks not immediately at the simulated locus but likely
-#' tagging the QTL to also be excluded
-#'
-#' @param sim.scans Output simulated genome scans from run.sim.scans().
-#' @param thresh A list of threshold, calculated from get.gev.thresh(), that correspond to the scans in sim.scans. 
-#' @param window.mb DEFAULT: "chromosome". Loci upstream and downstream the specified window.mb in Mb will also be checked 
-#' for statistically significant signals. Sometimes the statistical score will not pass at the simulated QTL, but
-#' does at nearby loci. "chromosome" results in only the consideration of signals from off-site chromosomes.
-#' @export pull.false.positive.prob
-#' @examples pull.false.positive.prob()
-pull.false.positive.prob <- function(sim.scans, thresh, window.mb="chromosome"){
-  map <- rep(NA, nrow(sim.scans$p.value))
-  total <- length(sim.scans$p.value)
-  for (i in 1:nrow(sim.scans$p.value)) {
-    this.index <- which(colnames(sim.scans$p.value) == sim.scans$locus[i])
-    this.chr <- sim.scans$chr[this.index]
-    if (window.mb == "chromosome") {
-      p.value <- sim.scans$p.value[i, !(sim.scans$chr == this.chr)]
-    }
-    else {
-      this.pos <- sim.scans$pos$Mb[this.index]
-      p.value <- sim.scans$p.value[i, !(sim.scans$pos$Mb >= this.pos - window.mb & sim.scans$pos$Mb <= this.pos + window.mb & sim.scans$chr == this.chr)]
-    }
-    map[i] <- any(-log10(p.value) >= thresh[i])
-  }
-  return(mean(map))
-}
-
-#' Calculate the distance between the simulated QTL and the minimum p-value locus within a window around the simulated QTL, given
-#' a QTL was detected in the window from SPARCC genome scans output from run.sim.scans()
-#'
-#' This function takes output genome scans from run.sim.scans() and calculates the distance between the simulated QTL and the 
-#' minimum p-value locus within a window around the simulated QTL if a QTL was detected. The intent is to quantify the distribution
-#' of the position of max statistical signal from the simulated QTL position.
-#'
-#' @param sim.scans Output simulated genome scans from run.sim.scans().
-#' @param thresh A list of threshold, calculated from get.gev.thresh(), that correspond to the scans in sim.scans. 
-#' @param window.mb DEFAULT: 5. Loci upstream and downstream the specified window.mb in Mb will also be checked 
-#' for statistically significant signals. Sometimes the statistical score will not pass at the simulated QTL, but
-#' does at nearby loci. This is the region interrogated for signals greater than the simulated QTL.
-#' @export pull.dist.from.locus
-#' @examples pull.dist.from.locus()
-pull.dist.from.locus <- function(sim.scans, thresh, window.mb=5) {
-  map <- rep(NA, nrow(sim.scans$p.value))
-  total <- length(sim.scans$p.value)
-  for (i in 1:nrow(sim.scans$p.value)) {
-    this.index <- which(colnames(sim.scans$p.value) == sim.scans$locus[i])
-    this.chr <- sim.scans$chr[this.index]
-    this.pos <- sim.scans$pos$Mb[this.index]
-    p.value <- sim.scans$p.value[i, sim.scans$pos$Mb >= this.pos - window.mb & sim.scans$pos$Mb <= this.pos + window.mb & sim.scans$chr == this.chr]
-    pos <- sim.scans$pos$Mb[sim.scans$pos$Mb >= this.pos - window.mb & sim.scans$pos$Mb <= this.pos + window.mb & sim.scans$chr == this.chr]
-    if (any(-log10(p.value) >= thresh[i])) {
-      map[i] <- pos[which.min(p.value)] - this.pos
-    }
-    else {
-      map[i] <- NA
-    }
-  }
-  return(map)
-}
-
 ## Produce SDP mapping matrix from SDP string
 model.matrix.from.ID <- function(M.ID){
   m <- as.numeric(unlist(strsplit(M.ID, ","))) + 1
@@ -917,172 +630,177 @@ pull.qr.from.compact <- function(compact.qr.list,
   return(output.qr)
 }
 
-#' @export convert.qtl.effect.to.means
-convert.qtl.effect.to.means <- function(qtl.effect.size,
-                                        strain.effect.size=0,
-                                        num.replicates){
-  mean.noise.effect.size <- (1 - qtl.effect.size - strain.effect.size)/num.replicates
-  denominator <- sum(qtl.effect.size, strain.effect.size, mean.noise.effect.size)
-  mean.qtl.effect.size <- qtl.effect.size/denominator
-  mean.strain.effect.size <- strain.effect.size/denominator
-  results <- c(mean.qtl.effect.size, mean.strain.effect.size)
-  names(results) <- c("QTL", "strain")
-  return(results)
-}
-
-
-#' @export interpolate.qtl.power
-interpolate.qtl.power <- function(r1.results,
-                                  qtl.effect.sizes,
-                                  strain.effect.sizes=0,
-                                  num.replicates,
-                                  n.alleles,
-                                  use.window=TRUE,
-                                  n.strains) {
+### From miqtl originally
+extract.qr <- function(genomecache, 
+                       id="SUBJECT.NAME",
+                       data, 
+                       formula, 
+                       model=c("additive", "full"), 
+                       condition.loci=NULL,
+                       chr="all", 
+                       just.these.loci=NULL, 
+                       use.progress.bar=TRUE){
+  K <- NULL
+  model <- model[1]
   
-  if (length(strain.effect.sizes) == 1) { strain.effect.sizes <- rep(strain.effect.sizes, length(qtl.effect.sizes)) }
-  if (length(num.replicates) == 1) { num.replicates <- rep(num.replicates, length(qtl.effect.sizes)) }
-  r1.qtl.effect.sizes <- sapply(1:length(qtl.effect.sizes), function(x) convert.qtl.effect.to.means(qtl.effect.size=qtl.effect.sizes[x],
-                                                                                                    strain.effect.size=strain.effect.sizes[x],
-                                                                                                    num.replicates=num.replicates[x])["QTL"])
-  ## Processing evaluated power
-  power <- r1.results[r1.results$n.strains %in% n.strains & r1.results$n.alleles %in% n.alleles,]
-  if (use.window) { y <- power$power }
-  else { y <- power$power.window }
-  x <- power$h.qtl
+  h <- DiploprobReader$new(genomecache)
+  founders <- h$getFounders()
+  num.founders <- length(founders)
+  loci <- h$getLoci()
   
-  y <- c(0, y, 1)
-  x <- c(0, x, 1)
-
-  powers <- approx(x=x, y=y, xout=r1.qtl.effect.sizes)$y
-  return(powers)
-}
-
-#' @export interpolate.table
-interpolate.table <- function(r1.results,
-                              num.replicates,
-                              n.alleles,
-                              use.window=TRUE) {
-  qtl.effect.size <- unique(r1.results$h.qtl)
-  n.strains <- unique(r1.results$n.strains)
-  strain.effect.size <- unique(r1.results$h.strain)
-  final.data <- NULL
-  for(i in 1:length(n.strains)) {
-    temp <- sapply(1:length(num.replicates), function(x) interpolate.qtl.power(r1.results=r1.results,
-                                                                               qtl.effect.sizes=qtl.effect.size,
-                                                                               strain.effect.size=strain.effect.size,
-                                                                               num.replicates=num.replicates[x],
-                                                                               n.alleles=n.alleles,
-                                                                               use.window=use.window,
-                                                                               n.strains=n.strains[i]))
-    rownames(temp) <- qtl.effect.size
-    colnames(temp) <- num.replicates
-    temp.data <- reshape2::melt(temp)
-    temp.data <- cbind(rep(n.strains[i], nrow(temp.data)), rep(n.alleles, nrow(temp.data)), temp.data)
-    names(temp.data) <- c("n.strains", "n.alleles", "h.qtl", "n.replicates", ifelse(use.window, "power.window", "power"))
-    final.data <- rbind(final.data, temp.data)
-  } 
-  return(final.data)
-}
-
-#function for curve point confidence interval using binomial with jeffery's prior
-#' @export binomial.prop.ci
-binomial.prop.ci <- function(p, n.sims=1000, alpha=0.05){
-  ci.lower <- qbeta(0.5*alpha, p*n.sims+0.5, (1-p)*n.sims+0.5)
-  ci <- c(ci.lower, qbeta(1-0.5*alpha, p*n.sims+0.5, (1-p)*n.sims+0.5))
-  
-  if (p==0){
-    ci[1] <- 0
-  } else if (p==1){
-    ci[2] <- 1
+  loci.chr <- h$getChromOfLocus(loci)
+  if(chr[1] != "all"){
+    loci.chr <- h$getChromOfLocus(loci)
+    loci <- loci[loci.chr %in% chr]
   }
-  return(ci)
+  if(!is.null(just.these.loci)){
+    loci <- loci[loci %in% just.these.loci]
+    loci.chr <- loci.chr[loci %in% just.these.loci]
+  }
+  subjects <- as.character(data[,id])
+  X.0 <- model.matrix(formula, data=data)
+  if(!is.null(condition.loci)){
+    for(i in 1:length(condition.loci)){
+      X.condition <- h$getLocusMatrix(condition.loci[i], model=model, subjects=subjects)
+      keep.col <- 1:ncol(X.condition)
+      max.column <- which.max(colSums(X.condition, na.rm=TRUE))[1]
+      keep.col <- keep.col[keep.col != max.column]
+      X.0 <- cbind(X.0, X.condition[,keep.col])
+    }
+  }
+  qr.0 <- qr(X.0)
+  
+  if(use.progress.bar){ pb <- txtProgressBar(min=0, max=length(loci), style=3) }
+  qr.list <- list()
+  intercept.allele <- rep(NA, length(loci)) # For allele effects
+  for(i in 1:length(loci)){
+    X <- h$getLocusMatrix(loci[i], model=model, subjects=subjects)
+    keep.col <- 1:ncol(X)
+    max.column <- which.max(colSums(X, na.rm=TRUE))[1]
+    intercept.allele[i] <- founders[max.column]
+    keep.col <- keep.col[keep.col != max.column]
+    X <- cbind(X.0, X[,keep.col])
+    qr.list[[i]] <- qr(X)
+    if(use.progress.bar){ setTxtProgressBar(pb, i) }
+  }
+  names(qr.list) <- loci
+  
+  qr.object <- list(qr.list=qr.list,
+                    intercept.allele=intercept.allele,
+                    condition.loci=condition.loci,
+                    qr.0=qr.0,
+                    chr=loci.chr,
+                    pos=list(cM=h$getLocusStart(loci, scale="cM"),
+                             Mb=h$getLocusStart(loci, scale="Mb")),
+                    model=model,
+                    founders=h$getFounders(),
+                    subjects=subjects,
+                    formula=Reduce(paste, deparse(formula)))
 }
 
-#' @export power.plot
-power.plot <- function(results,
-                       qtl.effect.size,
-                       n.alleles,
-                       n.replicates=NULL,
-                       col="firebrick3",
-                       pch=20,
-                       use.window=TRUE,
-                       alpha=0.7) {
-  n.replicates <- ifelse(is.null(n.replicates), results$n.replicates[1], n.replicates)
-  results[,c("lower", "upper")] <- t(sapply(results[,ifelse(use.window, "power.window", "power")], binomial.prop.ci))
-  plot(c(), c(), ylim=c(0,1), xlim=c(10,72), las=1, xlab="Number of strains", ylab = "Power", frame.plot=FALSE)
-  data.subset <- results[results$n.replicates %in% n.replicates & results$n.alleles %in% n.alleles & results$h.qtl %in% qtl.effect.size,]
-  polygon(c(data.subset$n.strains, rev(data.subset$n.strains)), 
-          c(data.subset$lower,rev(data.subset$upper)), 
-          col=scales::alpha(col, alpha=alpha), density=NA)
-  lines(data.subset$n.strains, data.subset[,ifelse(use.window, "power.window", "power")], col="black", lwd=1.5, lend=1, type="b", cex=0.8, pch=pch)
+### From miqtl originally
+scan.qr <- function(qr.object, 
+                    data, 
+                    phenotype,
+                    return.allele.effects=FALSE,
+                    chr="all", 
+                    id="SUBJECT.NAME",
+                    just.these.loci=NULL,
+                    debug.single.fit=FALSE, 
+                    use.progress.bar=TRUE,
+                    ...){
+  model <- qr.object$model
+  subjects <- qr.object$subjects
+  founders <- qr.object$founders
+  num.founders <- length(founders)
+  loci <- names(qr.object$qr.list)
+  loci.chr <- qr.object$chr
+  rh.formula <- qr.object$formula
+  
+  if(model == "full" & return.allele.effects){
+    return.allele.effects <- FALSE
+    cat("Allele effects from regression models currently only available with additive model\n",
+        "Setting return.allele.effects to FALSE\n")
+  }
+  
+  ## Matching the subject order in the data with the qr object
+  reorder <- match(subjects, data[,id])
+  data <- data[reorder,]
+  n <- nrow(data)
+  
+  if(chr[1] != "all"){
+    loci <- loci[loci.chr %in% chr]
+  }
+  if(!is.null(just.these.loci)){
+    loci <- loci[loci %in% just.these.loci]
+    loci.chr <- loci.chr[loci %in% just.these.loci]
+  }
+  
+  formula.string <- paste(phenotype, rh.formula)
+  formula <- formula(formula.string)
+  
+  allele.effects <- NULL
+  p.vec <- rep(NA, length(loci))
+  
+  if(return.allele.effects){ 
+    allele.effects <- matrix(NA, nrow=length(founders), ncol=length(loci),
+                             dimnames=list(founders, loci))
+  }
+  y <- as.vector(model.frame(formula, data=data)[,1])
+  names(y) <- subjects
+  # Progress bar
+  if(use.progress.bar){ pb <- txtProgressBar(min=0, max=length(loci), style=3) }
+  for(i in 1:length(loci)){
+    p.vec[i] <- get.f.stat.p.val(qr.alt=qr.object$qr.list[[i]], 
+                                 qr.null=qr.object$qr.0, 
+                                 y=y)
+    if(is.nan(p.vec[i])){ p.vec[i] <- 1 }
+    if(return.allele.effects){
+      allele.effects[,i] <- get.allele.effects.from.fixef.eQTL(qr.alt=qr.object$qr.list[[i]], 
+                                                               y=y, 
+                                                               founders=founders,
+                                                               intercept.allele=qr.object$intercept.allele[i])
+    }
+    if(debug.single.fit){ browser() }
+    # Update progress bar
+    if(use.progress.bar){ setTxtProgressBar(pb, i) }
+  }
+  names(p.vec) <- loci
+  if(!is.null(qr.object$condition.loci)){
+    formula.string <- paste(Reduce(paste, deparse(formula)), paste(qr.object$condition.loci, collapse="+"), sep="+")
+  }
+  output <- list(LOD=NULL,
+                 p.value=p.vec,
+                 df=NULL,
+                 pos=list(Mb=qr.object$pos$Mb, 
+                          cM=qr.object$pos$cM),
+                 loci=loci, 
+                 chr=loci.chr,
+                 allele.effects=allele.effects,
+                 y=y,
+                 formula=formula.string,
+                 model.type=model,
+                 p.value.method="ANOVA",
+                 locus.effect.type="fixed",
+                 n=length(y))
+  return(output)
 }
 
-
-#' @export add.curve.to.power.plot
-add.curve.to.power.plot <- function(results,
-                                    qtl.effect.size,
-                                    n.alleles,
-                                    n.replicates=NULL,
-                                    col="skyblue",
-                                    pch=1,
-                                    use.window=TRUE,
-                                    alpha=0.7) {
-  n.replicates <- ifelse(is.null(n.replicates), results$n.replicates[1], n.replicates)
-  results[,c("lower", "upper")] <- t(sapply(results[,ifelse(use.window, "power.window", "power")], binomial.prop.ci))
-  data.subset <- results[results$n.replicates %in% n.replicates & results$n.alleles %in% n.alleles & results$h.qtl %in% qtl.effect.size,]
-  polygon(c(data.subset$n.strains, rev(data.subset$n.strains)), 
-          c(data.subset$lower,rev(data.subset$upper)), 
-          col=scales::alpha(col, alpha=alpha), density=NA)
-  lines(data.subset$n.strains, data.subset[,ifelse(use.window, "power.window", "power")], col="black", lwd=1.5, lend=1, type="b", cex=0.8, pch=pch)
+### From miqtl originally
+straineff.mapping.matrix <- function(M=8){
+  T <- M*(M+1)/2
+  mapping <- matrix(rep(0, T*M), M, T)
+  idx <- 1;
+  for (i in 1:M){
+    mapping[i, idx] <- mapping[i, idx] + 2
+    idx <- idx + 1;
+  }
+  for (i in 2:M){
+    for (j in 1:(i-1)){
+      mapping[i, idx] <- mapping[i, idx] + 1;
+      mapping[j, idx] <- mapping[j, idx] + 1;
+      idx <- idx + 1;
+    }
+  }
+  return(t(mapping))
 }
-
-#' @export fpp.plot
-fpp.plot <- function(results,
-                       qtl.effect.size,
-                       n.alleles,
-                       n.replicates=NULL,
-                       col="firebrick3",
-                       pch=20,
-                       alpha=0.7) {
-  n.replicates <- ifelse(is.null(n.replicates), results$n.replicates[1], n.replicates)
-  results[,c("lower", "upper")] <- t(sapply(results$false, binomial.prop.ci))
-  plot(c(), c(), ylim=c(0,1), xlim=c(10,72), las=1, xlab="Number of strains", ylab = "False positive probability", frame.plot=FALSE)
-  data.subset <- results[results$n.replicates %in% n.replicates & results$n.alleles %in% n.alleles & results$h.qtl %in% qtl.effect.size,]
-  polygon(c(data.subset$n.strains, rev(data.subset$n.strains)), 
-          c(data.subset$lower,rev(data.subset$upper)), 
-          col=scales::alpha(col, alpha=alpha), density=NA)
-  lines(data.subset$n.strains, data.subset$false, col="black", lwd=1.5, lend=1, type="b", cex=0.8, pch=pch)
-}
-
-
-#' @export add.curve.to.fpp.plot
-add.curve.to.fpp.plot <- function(results,
-                                    qtl.effect.size,
-                                    n.alleles,
-                                    n.replicates=NULL,
-                                    col="skyblue",
-                                    pch=1,
-                                    alpha=0.7) {
-  n.replicates <- ifelse(is.null(n.replicates), results$n.replicates[1], n.replicates)
-  results[,c("lower", "upper")] <- t(sapply(results$false, binomial.prop.ci))
-  data.subset <- results[results$n.replicates %in% n.replicates & results$n.alleles %in% n.alleles & results$h.qtl %in% qtl.effect.size,]
-  polygon(c(data.subset$n.strains, rev(data.subset$n.strains)), 
-          c(data.subset$lower,rev(data.subset$upper)), 
-          col=scales::alpha(col, alpha=alpha), density=NA)
-  lines(data.subset$n.strains, data.subset$false, col="black", lwd=1.5, lend=1, type="b", cex=0.8, pch=pch)
-}
-
-
-### Issues because the system is additionally constrained to qtl.effect.size + strain.effect.size + noise.effect.size = 1
-# convert.qtl.effect.to.reps <- function(mean.qtl.effect.size,
-#                                        strain.effect.size=0,
-#                                        noise.effect.size,
-#                                        num.replicates){
-#   qtl.effect.size <- (mean.qtl.effect.size * (strain.effect.size + noise.effect.size/num.replicates))/(1 - mean.qtl.effect.size)
-#   results <- c(qtl.effect.size, strain.effect.size)
-#   names(results) <- c("QTL", "strain")
-#   return(results)
-# }
-
-

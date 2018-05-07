@@ -26,7 +26,7 @@ and genome scans.}
 scans completed.}
 
 \item{all.sim.qr}{DEFAULT: NULL. If NULL, necessary qr decompositions are performed, which will slow down
-the function significantly. If non-NULL, it expects either output from miqtl::extract.qr for a single sample
+the function significantly. If non-NULL, it expects either output from extract.qr for a single sample
 of CC lines, or a list of output for multiple samples.}
 
 \item{return.all.sim.qr}{DEFAULT: TRUE. Saves the qr decompositions for later use, though will make output
