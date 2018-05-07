@@ -461,11 +461,6 @@ simulate.CC.qtl <- function(CC.lines,
                                               DAMB=DAMB.var.table))))
 }
 
-non.sample.var <- function(x) {
-  var.x <- var(x)*((length(x) - 1)/length(x))
-  return(var.x)
-}
-
 ## Draws and scales residuals in single function
 calc.scaled.residual <- function(noise.effect.size, n){
   residual <- rnorm(n=n)

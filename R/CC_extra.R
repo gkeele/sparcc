@@ -102,6 +102,10 @@ convert.qtl.effect.to.means <- function(qtl.effect.size,
   return(results)
 }
 
+non.sample.var <- function(x) {
+  var.x <- var(x)*((length(x) - 1)/length(x))
+  return(var.x)
+}
 
 #' @export interpolate.qtl.power
 interpolate.qtl.power <- function(r1.results,
