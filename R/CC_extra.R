@@ -170,3 +170,19 @@ binomial.prop.ci <- function(p, n.sims=1000, alpha=0.05){
   }
   return(ci)
 }
+
+# Originally from miqtl
+get.f.stat.p.val <- function(qr.alt, 
+                             qr.null, 
+                             y){
+  rss0 <- sum(qr.resid(qr.null, y)^2)
+  rss1 <- sum(qr.resid(qr.alt, y)^2)
+  df1 <- qr.alt$rank - qr.null$rank
+  df2 <- length(y) - qr.alt$rank
+  
+  mst <- (rss0 - rss1)/df1
+  mse <- rss1/df2
+  f.stat <- mst/mse
+  p.val <- pf(q=f.stat, df1=df1, df2=df2, lower.tail=FALSE)
+  return(p.val)
+}
