@@ -635,3 +635,49 @@ genome.plotter.whole <- function(scan.list, use.lod=FALSE, just.these.chr=NULL,
            lwd=thresholds.lwd, bty=my.legend.bty, cex=my.legend.cex)
   }
 }
+
+build.position.scaffold <- function(scan.list, scale) {
+  for (i in 1:length(scan.list)) {
+    chr <- scan.list[[i]]$chr
+    pos <- scan.list[[i]]$pos[[scale]]
+    ## Handling X
+    has.X <- FALSE
+    if(any(chr=="X")){
+      has.X <- TRUE
+      chr[chr=="X"] <- max(as.numeric(unique(chr[chr != "X"]))) + 1
+    }
+    
+    pre.chr <- as.factor(as.numeric(chr))
+    max.pos <- tapply(pos, pre.chr, function(x) max(x, na.rm=TRUE))
+    if (i == 1) {
+      total.max.pos <- rep(0, length(max.pos))
+    }
+    total.max.pos <- sapply(1:length(max.pos), function(x) max(max.pos[x], total.max.pos[x]))
+  }
+  names(total.max.pos) <- names(max.pos)
+  if (has.X) { names(total.max.pos)[length(total.max.pos)] <- "X" }
+  return(total.max.pos)
+}
+
+expand.for.polygon <- function(x, y){
+  if(any(is.na(x)) | any(is.na(y))){
+    remove.na.x <- which(is.na(x))
+    remove.na.y <- which(is.na(y))
+    remove.na <- sort(c(remove.na.x, remove.na.y))
+    x <- x[-remove.na]
+    y <- y[-remove.na]
+  }
+  return(list(x=c(x[1], x, x[length(x)]),
+              y=c(0, y, 0)))
+}
+
+calc.manual.mark.locus <- function(shift.vector, mark.manual) {
+  here <- which(names(shift.vector) == mark.manual$chr)
+  if (here == 1) {
+    new.pos <- mark.manual$pos
+  }
+  else {
+    new.pos <- sum(shift.vector[1:(here - 1)]) + mark.manual$pos
+  }
+  return(new.pos)
+}
