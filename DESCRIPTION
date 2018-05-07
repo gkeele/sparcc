@@ -2,7 +2,8 @@ Package: sparcc
 Title: Simulated Power Analysis in the Realized Collaborative Cross
 Version: 0.1
 Authors@R: c(person("Gregory", "Keele", email = "gkeele@gmail.com", role = c("aut", "cre")), 
-	     person("Wesley", "Crouse", role = "aut"))
+	     person("Wesley", "Crouse", role = "aut"),
+	     person("William", "Valdar", role = "aut"))
 Description: This package provides functionality to simulate phenotypes in the actual Collaborative Cross (CC) lines, which can be used by other tools designed to analyze CC data. Additionally, it provides rapid QTL mapping for the estimation of power to map QTL, and other statistics of interest, such as false positive rates.
 Depends: R (>= 3.2.2)
 License: GPL (>= 2)
