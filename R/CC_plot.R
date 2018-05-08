@@ -234,8 +234,8 @@ add.curve.to.power.plot <- function(results,
   lines(data.subset$n.strains, data.subset[,ifelse(use.window, "power.window", "power")], col="black", lwd=1.5, lend=1, type="b", cex=0.8, pch=pch)
 }
 
-#' @export fpp.plot
-fpp.plot <- function(results,
+#' @export fpr.plot
+fpr.plot <- function(results,
                      qtl.effect.size,
                      n.alleles,
                      n.replicates=NULL,
@@ -244,7 +244,7 @@ fpp.plot <- function(results,
                      alpha=0.7) {
   n.replicates <- ifelse(is.null(n.replicates), results$n.replicates[1], n.replicates)
   results[,c("lower", "upper")] <- t(sapply(results$false, binomial.prop.ci))
-  plot(c(), c(), ylim=c(0,1), xlim=c(10,72), las=1, xlab="Number of strains", ylab = "False positive probability", frame.plot=FALSE)
+  plot(c(), c(), ylim=c(0,1), xlim=c(10,72), las=1, xlab="Number of strains", ylab = "False positive rate", frame.plot=FALSE)
   data.subset <- results[results$n.replicates %in% n.replicates & results$n.alleles %in% n.alleles & results$h.qtl %in% qtl.effect.size,]
   polygon(c(data.subset$n.strains, rev(data.subset$n.strains)), 
           c(data.subset$lower,rev(data.subset$upper)), 
@@ -254,7 +254,7 @@ fpp.plot <- function(results,
 
 
 #' @export add.curve.to.fpp.plot
-add.curve.to.fpp.plot <- function(results,
+add.curve.to.fpr.plot <- function(results,
                                   qtl.effect.size,
                                   n.alleles,
                                   n.replicates=NULL,
