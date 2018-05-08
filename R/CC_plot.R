@@ -253,7 +253,7 @@ fpr.plot <- function(results,
 }
 
 
-#' @export add.curve.to.fpp.plot
+#' @export add.curve.to.fpr.plot
 add.curve.to.fpr.plot <- function(results,
                                   qtl.effect.size,
                                   n.alleles,
