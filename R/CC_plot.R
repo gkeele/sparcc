@@ -55,8 +55,8 @@ single.sim.plot <- function(sim.scans,
                         sim.scans$properties$num.alleles, "functional alleles,",
                         sim.scans$properties$num.lines, "lines,",
                         sim.scans$properties$num.replicates, ifelse(sim.scans$properties$num.replicates == 1, "replicate", "replicates")))
-  genome.plotter.whole(scan.list=list(dummy.scan), override.title=this.title, distinguish.chr.type="color",
-                       scale=scale, mark.locus=locus, hard.thresholds=thresh[phenotype.index], ...)
+  genome.plotter.sparcc(scan.list=list(dummy.scan), override.title=this.title, distinguish.chr.type="color",
+                        scale=scale, mark.locus=locus, hard.thresholds=thresh[phenotype.index], ...)
 }
 
 #' @export
@@ -271,7 +271,7 @@ add.curve.to.fpr.plot <- function(results,
 }
 
 ### From miqtl originally
-genome.plotter.whole <- function(scan.list, use.lod=FALSE, just.these.chr=NULL,
+genome.plotter.sparcc <- function(scan.list, use.lod=FALSE, just.these.chr=NULL,
                                  scale="Mb", main.colors=c("black", "cyan", "darkgreen"),
                                  distinguish.chr.type=c("color", "box"), distinguish.box.col="gray88", 
                                  distinguish.chr.col=c("gray60", "#008080", "greenyellow"),
@@ -585,10 +585,10 @@ genome.plotter.whole <- function(scan.list, use.lod=FALSE, just.these.chr=NULL,
     axis(side=1, tick=FALSE, line=NA, at=label.spots, labels=axis.label, cex.axis=my.x.lab.cex, padj=-1.5, xpd=TRUE)
   }
   if (!is.null(mark.locus)) {
-    rug(x=updated.pos[which(names(updated.pos) %in% mark.locus)], lwd=4, col=mark.locus.col)
+    rug(x=updated.pos[which(names(updated.pos) %in% mark.locus)], lwd=10, col=mark.locus.col, ticksize=0.05)
   }
   if (!is.null(mark.manual$chr)) {
-    rug(x=calc.manual.mark.locus(shift.vector=shift.vector, mark.manual=mark.manual), lwd=4, col=mark.locus.col)
+    rug(x=calc.manual.mark.locus(shift.vector=shift.vector, mark.manual=mark.manual), lwd=10, col=mark.locus.col, ticksize=0.05)
   }
   if (use.legend) {
     if (add.polygon) {

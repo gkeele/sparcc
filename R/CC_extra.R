@@ -137,11 +137,12 @@ interpolate.qtl.power <- function(r1.results,
 #' @export interpolate.table
 interpolate.table <- function(r1.results,
                               num.replicates,
+                              strain.effect.size=NULL,
                               n.alleles,
                               use.window=TRUE) {
   qtl.effect.size <- unique(r1.results$h.qtl)
   n.strains <- unique(r1.results$n.strains)
-  strain.effect.size <- unique(r1.results$h.strain)
+  if (is.null(strain.effect.size)) { strain.effect.size <- unique(r1.results$h.strain) }
   final.data <- NULL
   for(i in 1:length(n.strains)) {
     temp <- sapply(1:length(num.replicates), function(x) interpolate.qtl.power(r1.results=r1.results,
