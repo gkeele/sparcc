@@ -89,7 +89,20 @@ pull.dist.from.locus <- function(sim.scans, thresh, window.mb=5) {
   return(map)
 }
 
+#' Calculates the QTL effect size in a population of means based on the reduction 
+#' in residual error due to replicates
+#'
+#' This function calculates the QTL effect size in the mapping population on strain means based on the reduction
+#' in random variation due to noise that results from averaging the phenotypes of replicates.
+#'
+#' @param qtl.effect.size The proportion of variance due to the QTL in the sample population with replicates.
+#' Must be between 0 and 1.
+#' @param strain.effect.size DEFAULT: 0. The proportion of varianced due to background strain effect. This source of 
+#' noise, with respect to the QTL signal, cannot be reduced by replicate observation.
+#' @param num.replicates The number of replicates per CC strain. Higher numbers will result in greater reduction of
+#' random error, and larger increases in QTL effect size in the sample population of means.
 #' @export convert.qtl.effect.to.means
+#' @examples convert.qtl.effect.to.means()
 convert.qtl.effect.to.means <- function(qtl.effect.size,
                                         strain.effect.size=0,
                                         num.replicates){
@@ -107,7 +120,25 @@ non.sample.var <- function(x) {
   return(var.x)
 }
 
+#' Interpolates QTL mapping power for sample populations with replicates from dense results 
+#' in single observation simulations
+#'
+#' This function interpolates the QTL mapping power for an experimental mapping population with replicates
+#' based on dense simulated power results in simulations with only a single observation per strain. 
+#'
+#' @param r1.results Data frame of power estimates from simulations based on a single observation per strain.
+#' r1.dat and r1.damb.dat are included in SPARCC for this purpose.
+#' @param qtl.effect.sizes The desired QTL effect sizes for which power estimates will be interpolated from dense
+#' single observation results.
+#' @param strain.effect.sizes The desired proportions of variance due to background strain effect for hypothetical population in which
+#' power is evaluated.
+#' @param num.replicates The desired number of replicates for a hypothetical study in which to evaluate power.
+#' @param n.alleles The number of functional alleles for the simulated QTL.
+#' @param use.window DEFAULT: TRUE. Whether the interpolated powers are based on denser power estimates using a window
+#' around a locus or just the actual locus.
+#' @param n.strains The number of CC strains for the desired interpolated power estimate.
 #' @export interpolate.qtl.power
+#' @examples interpolate.qtl.power()
 interpolate.qtl.power <- function(r1.results,
                                   qtl.effect.sizes,
                                   strain.effect.sizes=0,
@@ -134,7 +165,22 @@ interpolate.qtl.power <- function(r1.results,
   return(powers)
 }
 
+#' Convenience function that interpolates QTL mapping power based on QTL effect sizes in a results data frame 
+#' from single observation simulations
+#'
+#' This function interpolates the QTL mapping power through interpolate.qtl.power() based on a results data frame
+#' of densely simulated power estimates in popuations with a single observation per strain. 
+#'
+#' @param r1.results Data frame of power estimates from simulations based on a single observation per strain.
+#' r1.dat and r1.damb.dat are included in SPARCC for this purpose.
+#' @param num.replicates The desired number of replicates for a hypothetical study in which to evaluate power.
+#' @param strain.effect.size DEFAULT: NULL. The desired proportion of variance due to background strain effect for hypothetical population in which
+#' power is evaluated.
+#' @param n.alleles The number of functional alleles for the simulated QTL.
+#' @param use.window DEFAULT: TRUE. Whether the interpolated powers are based on denser power estimates using a window
+#' around a locus or just the actual locus.
 #' @export interpolate.table
+#' @examples interpolate.table()
 interpolate.table <- function(r1.results,
                               num.replicates,
                               strain.effect.size=NULL,
