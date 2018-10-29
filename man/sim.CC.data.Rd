@@ -8,9 +8,9 @@ sim.CC.data(genomecache, CC.lines = NULL, num.lines = NULL,
   vary.lines = TRUE, locus = NULL, vary.locus = TRUE, num.replicates,
   num.sim, M.ID = NULL, sample.as.method = c("uniform", "crp"),
   num.alleles = 8, num.founders = 8, qtl.effect.size, beta = NULL,
-  strain.effect.size = 0, impute = TRUE, scale.qtl.mode = c("B", "MB",
-  "DAMB", "none"), return.value = c("raw", "fixef.resid", "ranef.resid"),
-  return.means = TRUE)
+  strain.effect.size = 0, impute = TRUE, scale.qtl.mode = c("B",
+  "MB", "DAMB", "none"), return.value = c("raw", "fixef.resid",
+  "ranef.resid"), return.means = TRUE)
 }
 \arguments{
 \item{genomecache}{The path to the genome cache directory. The genome cache is a particularly structured

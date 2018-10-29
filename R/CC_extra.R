@@ -165,6 +165,51 @@ interpolate.qtl.power <- function(r1.results,
   return(powers)
 }
 
+#' Interpolates QTL location error for sample populations with replicates from dense results 
+#' in single observation simulations
+#'
+#' This function interpolates the QTL location error for an experimental mapping population with replicates
+#' based on dense simulated power results in simulations with only a single observation per strain. 
+#'
+#' @param r1.results Data frame of power estimates from simulations based on a single observation per strain.
+#' r1.dist.dat is included in SPARCC for this purpose.
+#' @param qtl.effect.sizes The desired QTL effect sizes for which power estimates will be interpolated from dense
+#' single observation results.
+#' @param strain.effect.sizes The desired proportions of variance due to background strain effect for hypothetical population in which
+#' power is evaluated.
+#' @param num.replicates The desired number of replicates for a hypothetical study in which to evaluate power.
+#' @param n.alleles The number of functional alleles for the simulated QTL.
+#' @param n.strains The number of CC strains for the desired interpolated power estimate.
+#' @export interpolate.qtl.distance
+#' @examples interpolate.qtl.distance()
+interpolate.qtl.distance <- function(r1.results,
+                                     qtl.effect.sizes,
+                                     strain.effect.sizes = 0,
+                                     num.replicates,
+                                     n.mean.pseudo = 10,
+                                     n.alleles,
+                                     n.strains) {
+  
+  if (length(strain.effect.sizes) == 1) { strain.effect.sizes <- rep(strain.effect.sizes, length(qtl.effect.sizes)) }
+  if (length(num.replicates) == 1) { num.replicates <- rep(num.replicates, length(qtl.effect.sizes)) }
+  r1.qtl.effect.sizes <- sapply(1:length(qtl.effect.sizes), function(x) convert.qtl.effect.to.means(qtl.effect.size=qtl.effect.sizes[x],
+                                                                                                    strain.effect.size=strain.effect.sizes[x],
+                                                                                                    num.replicates=num.replicates[x])["QTL"])
+  ## Processing evaluated power
+  dist.tab <- r1.results[r1.results$n.strains %in% n.strains & r1.results$n.alleles %in% n.alleles,]
+  #browser()
+  y <- abs(dist.tab$dist)
+  #y <- mean(abs(dist.tab$dist), rep(2.5, n.mean.pseudo))
+  x <- dist.tab$h.qtl
+  
+  y <- c(0, y, 1)
+  x <- c(0, x, 1)
+  
+  distances <- approx(x = x, y = y, xout = r1.qtl.effect.sizes)$y
+  return(distances)
+}
+
+
 #' Convenience function that interpolates QTL mapping power based on QTL effect sizes in a results data frame 
 #' from single observation simulations
 #'

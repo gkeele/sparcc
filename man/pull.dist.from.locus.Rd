@@ -5,7 +5,7 @@
 \title{Calculate the distance between the simulated QTL and the minimum p-value locus within a window around the simulated QTL, given
 a QTL was detected in the window from SPARCC genome scans output from run.sim.scans()}
 \usage{
-pull.dist.from.locus(sim.scans, thresh, window.mb = 5)
+\method{pull}{dist.from.locus}(sim.scans, thresh, window.mb = 5)
 }
 \arguments{
 \item{sim.scans}{Output simulated genome scans from run.sim.scans().}

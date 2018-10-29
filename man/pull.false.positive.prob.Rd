@@ -4,7 +4,8 @@
 \alias{pull.false.positive.prob}
 \title{Calculate the probability of detecting any false QTL from SPARCC genome scans output from run.sim.scans()}
 \usage{
-pull.false.positive.prob(sim.scans, thresh, window.mb = "chromosome")
+\method{pull}{false.positive.prob}(sim.scans, thresh,
+  window.mb = "chromosome")
 }
 \arguments{
 \item{sim.scans}{Output simulated genome scans from run.sim.scans().}
