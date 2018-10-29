@@ -175,20 +175,21 @@ interpolate.qtl.power <- function(r1.results,
 #' r1.dist.dat is included in SPARCC for this purpose.
 #' @param qtl.effect.sizes The desired QTL effect sizes for which power estimates will be interpolated from dense
 #' single observation results.
-#' @param strain.effect.sizes The desired proportions of variance due to background strain effect for hypothetical population in which
+#' @param strain.effect.sizes DEFAULT: 0. The desired proportions of variance due to background strain effect for hypothetical population in which
 #' power is evaluated.
 #' @param num.replicates The desired number of replicates for a hypothetical study in which to evaluate power.
 #' @param n.alleles The number of functional alleles for the simulated QTL.
 #' @param n.strains The number of CC strains for the desired interpolated power estimate.
+#' @param n.mean.psuedo DEFAULT: 10. The number of psuedo observations (of 2.5) to be used for regularization.
 #' @export interpolate.qtl.distance
 #' @examples interpolate.qtl.distance()
 interpolate.qtl.distance <- function(r1.results,
                                      qtl.effect.sizes,
                                      strain.effect.sizes = 0,
                                      num.replicates,
-                                     n.mean.pseudo = 10,
                                      n.alleles,
-                                     n.strains) {
+                                     n.strains,
+                                     n.mean.pseudo = 10) {
   
   if (length(strain.effect.sizes) == 1) { strain.effect.sizes <- rep(strain.effect.sizes, length(qtl.effect.sizes)) }
   if (length(num.replicates) == 1) { num.replicates <- rep(num.replicates, length(qtl.effect.sizes)) }
