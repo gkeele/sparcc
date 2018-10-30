@@ -156,7 +156,7 @@ interpolate.qtl.power <- function(r1.results,
   power <- r1.results[r1.results$n.strains %in% n.strains & r1.results$n.alleles %in% n.alleles,]
   if (use.window) { y <- power$power }
   else { y <- power$power.window }
-  x <- power$h.qtl
+  x <- as.numeric(as.character(power$h.qtl))
   
   y <- c(0, y, 1)
   x <- c(0, x, 1)
@@ -199,13 +199,14 @@ interpolate.qtl.distance <- function(r1.results,
   ## Processing evaluated power
   dist.tab <- r1.results[r1.results$n.strains %in% n.strains & r1.results$n.alleles %in% n.alleles,]
   #y <- abs(dist.tab$dist)
+  #browser()
   y <- sapply(1:length(dist.tab$dist),
               function(i) mean(c(abs(dist.tab$dist[i]), rep(2.5, n.mean.pseudo))))
-  x <- dist.tab$h.qtl
+  x <- as.numeric(as.character(dist.tab$h.qtl))
   
-  y <- c(0, y, 1)
+  y <- c(2.5, y, 0)
   x <- c(0, x, 1)
-  
+
   distances <- approx(x = x, y = y, xout = r1.qtl.effect.sizes)$y
   return(distances)
 }
