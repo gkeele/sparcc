@@ -106,7 +106,7 @@ run.perm.scans <- function(perm.matrix,
                                   paste0("SUBJECT.NAME.", ifelse(sim.CC.scans$properties$vary.lines, phenotype.index[i], 1)))]
     if(sim.CC.scans$properties$vary.lines){
       if(is.full){
-        this.qr <- all.sim.qr[[phenotype.index]]
+        this.qr <- all.sim.qr[[phenotype.index[i]]]
       }
       else{
         this.qr <- all.sim.qr
