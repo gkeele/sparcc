@@ -366,7 +366,7 @@ simulate.CC.qtl <- function(CC.lines,
   }
   M <- QTL.effect$M
   raw.beta <- QTL.effect$beta 
-  if (scale.qtl.mode != "none") {
+  if (scale.qtl.mode != "none" & qtl.effect.size != 0) {
     beta <- (raw.beta - mean(raw.beta))/sqrt(non.sample.var(raw.beta))
   }
   else { beta <- raw.beta }
@@ -384,7 +384,9 @@ simulate.CC.qtl <- function(CC.lines,
   }
   
   ### MB
-  var.ratio <- c(non.sample.var(2*M %*% beta)/non.sample.var(2*beta))
+  var.ratio <- ifelse(qtl.effect.size != 0,
+                      c(non.sample.var(2*M %*% beta)/non.sample.var(2*beta)), 
+                      1)
   MB.var.effects <- calc.qtl.effect(beta = 0.5*beta*sqrt(qtl.effect.size)*sqrt(1/var.ratio),
                                     M = M,
                                     A = t(full.to.add.matrix),
@@ -397,7 +399,9 @@ simulate.CC.qtl <- function(CC.lines,
   }
   
   ### DAMB
-  var.ratio <- c(non.sample.var(D %*% t(full.to.add.matrix) %*% M %*% beta)/non.sample.var(2*beta))
+  var.ratio <- ifelse(qtl.effect.size != 0,
+                      c(non.sample.var(D %*% t(full.to.add.matrix) %*% M %*% beta)/non.sample.var(2*beta)),
+                      1)
   if (var.ratio != 0) { # Case when more than one allele is observed
     DAMB.beta <- 0.5*beta*sqrt(qtl.effect.size)*sqrt(1/var.ratio)
   }
