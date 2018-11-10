@@ -55,6 +55,7 @@ single.sim.plot <- function(sim.scans,
                         sim.scans$properties$num.alleles, "functional alleles,",
                         sim.scans$properties$num.lines, "lines,",
                         sim.scans$properties$num.replicates, ifelse(sim.scans$properties$num.replicates == 1, "replicate", "replicates")))
+  if (sim.scans$properties$qtl.effect.size == 0) { locus <- NULL }
   genome.plotter.sparcc(scan.list=list(dummy.scan), override.title=this.title, distinguish.chr.type="color",
                         scale=scale, mark.locus=locus, hard.thresholds=thresh[phenotype.index], ...)
 }
