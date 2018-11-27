@@ -1,6 +1,6 @@
 Package: sparcc
 Title: Simulated Power Analysis in the Realized Collaborative Cross
-Version: 0.1
+Version: 1.1.1
 Authors@R: c(person("Gregory", "Keele", email = "gkeele@gmail.com", role = c("aut", "cre")), 
 	     person("Wesley", "Crouse", role = "aut"),
 	     person("William", "Valdar", role = "aut"))
