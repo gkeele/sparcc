@@ -4,7 +4,7 @@
 \alias{pull.power}
 \title{Calculate the QTL mapping power from SPARCC genome scans output from run.sim.scans()}
 \usage{
-pull.power(sim.scans, thresh, window.mb = 5)
+\method{pull}{power}(sim.scans, thresh, window.mb = 5)
 }
 \arguments{
 \item{sim.scans}{Output simulated genome scans from run.sim.scans().}
