@@ -14,7 +14,6 @@
 #' @examples pull.power()
 pull.power <- function(sim.scans, thresh, window.mb=5){
   map <- rep(NA, nrow(sim.scans$p.value))
-  total <- length(sim.scans$p.value)
   for (i in 1:nrow(sim.scans$p.value)) {
     this.index <- which(colnames(sim.scans$p.value) == sim.scans$locus[i])
     this.chr <- sim.scans$chr[this.index]
