@@ -875,6 +875,8 @@ sim.CC.data.K <- function(genomecache,
                           CC.lines = NULL,
                           ...) {
   
+  h <- DiploprobReader$new(genomecache)
+  
   vary.lines <- ifelse(num.lines == 72 | !is.null(CC.lines), FALSE, TRUE)
   
   sparcc_sims <- sim.CC.data(genomecache = genomecache, 
@@ -886,13 +888,16 @@ sim.CC.data.K <- function(genomecache,
                              num.sim = num.sim,
                              vary.lines = vary.lines,
                              CC.lines = CC.lines)
+  
+  CC.lines <- h$getSubjects()
   if (!vary.lines) { this_K <- K[CC.lines, CC.lines] }
+
   for (i in 1:num.sim) {
     if (vary.lines) {
       this_K <- K[sparcc_sims$data[,paste0("SUBJECT.NAME.", i)],
                   sparcc_sims$data[,paste0("SUBJECT.NAME.", i)]]
     }
-    
+
     strain <- mvtnorm::rmvnorm(1, mean = rep(0, nrow(this_K)), sigma = this_K)[1,]
     
     strain <- (strain - mean(strain))/sqrt(sparcc:::non.sample.var(strain))
