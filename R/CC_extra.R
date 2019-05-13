@@ -105,6 +105,13 @@ pull.dist.from.locus <- function(sim.scans, thresh, window.mb=5) {
 convert.qtl.effect.to.means <- function(qtl.effect.size,
                                         strain.effect.size=0,
                                         num.replicates){
+  if (qtl.effect.size > 1 | qtl.effect.size  < 0 | strain.effect.size > 1 | strain.effect.size < 0) {
+    stop("Effect sizes are proportions, thus expected to be contained in [0, 1]", call.=FALSE)
+  }
+  if (qtl.effect.size + strain.effect.size > 1) {
+    stop("QTL effect size and strain effect size cannot sum to greater than 1", call.=FALSE)
+  }
+  
   mean.noise.effect.size <- (1 - qtl.effect.size - strain.effect.size)/num.replicates
   denominator <- sum(qtl.effect.size, strain.effect.size, mean.noise.effect.size)
   mean.qtl.effect.size <- qtl.effect.size/denominator
@@ -148,6 +155,8 @@ interpolate.qtl.power <- function(r1.results,
   
   if (length(strain.effect.sizes) == 1) { strain.effect.sizes <- rep(strain.effect.sizes, length(qtl.effect.sizes)) }
   if (length(num.replicates) == 1) { num.replicates <- rep(num.replicates, length(qtl.effect.sizes)) }
+
+  qtl.effect.sizes <- qtl.effect.sizes[qtl.effect.sizes + strain.effect.sizes <= 1]
   r1.qtl.effect.sizes <- sapply(1:length(qtl.effect.sizes), function(x) convert.qtl.effect.to.means(qtl.effect.size=qtl.effect.sizes[x],
                                                                                                     strain.effect.size=strain.effect.sizes[x],
                                                                                                     num.replicates=num.replicates[x])["QTL"])
@@ -192,6 +201,8 @@ interpolate.qtl.distance <- function(r1.results,
   
   if (length(strain.effect.sizes) == 1) { strain.effect.sizes <- rep(strain.effect.sizes, length(qtl.effect.sizes)) }
   if (length(num.replicates) == 1) { num.replicates <- rep(num.replicates, length(qtl.effect.sizes)) }
+  
+  qtl.effect.sizes <- qtl.effect.sizes[qtl.effect.sizes + strain.effect.sizes <= 1]
   r1.qtl.effect.sizes <- sapply(1:length(qtl.effect.sizes), function(x) convert.qtl.effect.to.means(qtl.effect.size=qtl.effect.sizes[x],
                                                                                                     strain.effect.size=strain.effect.sizes[x],
                                                                                                     num.replicates=num.replicates[x])["QTL"])
@@ -244,7 +255,7 @@ interpolate.table <- function(r1.results,
                                                                                n.alleles=n.alleles,
                                                                                use.window=use.window,
                                                                                n.strains=n.strains[i]))
-    rownames(temp) <- qtl.effect.size
+    rownames(temp) <- qtl.effect.size[1:nrow(temp)]
     colnames(temp) <- num.replicates
     temp.data <- reshape2::melt(temp)
     temp.data <- cbind(rep(n.strains[i], nrow(temp.data)), rep(n.alleles, nrow(temp.data)), temp.data)
